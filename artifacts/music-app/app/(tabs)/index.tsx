@@ -236,15 +236,8 @@ export default function HomeScreen() {
 
   return (
     <ScreenBackground>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingTop: topPad + 8, paddingBottom: 160 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="rgba(255,255,255,0.5)" />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
+      {/* Fixed header */}
+      <View style={[st.fixedHeader, { paddingTop: topPad + 8 }]}>
         <View style={st.headerRow}>
           <UserAvatar initial={initial} profilePic={profilePicture} />
           <View style={{ flex: 1, paddingHorizontal: 12 }}>
@@ -261,7 +254,7 @@ export default function HomeScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={st.chipsRow}
-          style={{ marginBottom: 20 }}
+          style={{ marginBottom: 8 }}
         >
           {FILTERS.map((f) => (
             <Pressable
@@ -273,6 +266,16 @@ export default function HomeScreen() {
             </Pressable>
           ))}
         </ScrollView>
+      </View>
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: topPad + 134, paddingBottom: 160 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="rgba(255,255,255,0.5)" />
+        }
+        showsVerticalScrollIndicator={false}
+      >
 
         {/* Quick access grid */}
         {loading ? (
@@ -349,11 +352,20 @@ export default function HomeScreen() {
 }
 
 const st = StyleSheet.create({
+  fixedHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    paddingBottom: 8,
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    marginBottom: 18,
+    marginBottom: 14,
   },
   avatar: {
     width: 40,

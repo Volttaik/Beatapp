@@ -50,7 +50,9 @@ function SpotifyTabButton({
       onPress={onPress}
       style={({ pressed }) => [tab.btn, pressed && { opacity: 0.6 }]}
     >
-      <Feather name={icon} size={22} color={color} />
+      <View style={tab.iconWrap}>
+        <Feather name={icon} size={22} color={color} />
+      </View>
       <Text style={[tab.label, { color }]} numberOfLines={1}>
         {label}
       </Text>
@@ -166,7 +168,7 @@ const bar = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#181818",
+    backgroundColor: "transparent",
   },
   tabRow: {
     flexDirection: "row",
