@@ -1,12 +1,12 @@
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -31,25 +31,55 @@ const HISTORY_KEY = "beatstream_search_history";
 const MAX_HISTORY = 10;
 
 function GenreGrid({ onSelect }: { onSelect: (id: string, label: string) => void }) {
+  const [previews, setPreviews] = useState<Record<string, Track>>({});
+
+  useEffect(() => {
+    FEATURED_GENRES.forEach((g) => {
+      fetchFreetouseCategoryTracks(g.id, { limit: "1" }).then((tracks) => {
+        if (tracks.length > 0) {
+          setPreviews((prev) => ({ ...prev, [g.id]: tracks[0] }));
+        }
+      });
+    });
+  }, []);
+
   return (
     <View style={gg.grid}>
-      {FEATURED_GENRES.map((g) => (
-        <Pressable
-          key={g.id}
-          onPress={() => onSelect(g.id, g.label)}
-          style={({ pressed }) => [gg.item, pressed && { opacity: 0.7 }]}
-        >
-          <GlassCard style={gg.card} intensity={65} shine>
-            <GlassIcon
-              name={(GENRE_CATEGORY_ICONS[g.id] ?? "music") as any}
-              size={22}
-              containerSize={44}
-              color="rgba(255,255,255,0.8)"
-            />
-            <Text style={gg.label}>{g.label}</Text>
-          </GlassCard>
-        </Pressable>
-      ))}
+      {FEATURED_GENRES.map((g) => {
+        const preview = previews[g.id];
+        return (
+          <Pressable
+            key={g.id}
+            onPress={() => onSelect(g.id, g.label)}
+            style={({ pressed }) => [gg.item, pressed && { opacity: 0.75 }]}
+          >
+            <View style={gg.card}>
+              {preview?.artwork ? (
+                <Image
+                  source={preview.artwork}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                  contentFit="cover"
+                />
+              ) : null}
+              <View style={gg.overlay} />
+              <GlassIcon
+                name={(GENRE_CATEGORY_ICONS[g.id] ?? "music") as any}
+                size={18}
+                containerSize={38}
+                color="rgba(255,255,255,0.9)"
+              />
+              <View style={gg.info}>
+                <Text style={gg.label}>{g.label}</Text>
+                {preview ? (
+                  <Text style={gg.trackName} numberOfLines={1}>
+                    {preview.title}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -58,14 +88,33 @@ const gg = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   item: { width: "47%" },
   card: {
-    height: 80,
+    height: 88,
     borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 14,
+    overflow: "hidden",
+    backgroundColor: "rgba(8,8,18,0.70)",
+    borderWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.18)",
+    borderLeftColor: "rgba(255,255,255,0.10)",
+    borderRightColor: "rgba(255,255,255,0.04)",
+    borderBottomColor: "rgba(255,255,255,0.04)",
+  } as any,
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(2,4,14,0.62)",
+    borderRadius: 16,
   },
-  label: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#fff" },
+  info: { flex: 1 },
+  label: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#fff" },
+  trackName: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.50)",
+    marginTop: 3,
+  },
 });
 
 export default function SearchScreen() {
@@ -78,7 +127,7 @@ export default function SearchScreen() {
   const [searched, setSearched] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const topPad = Platform.OS === "web" ? 60 : insets.top;
+  const topPad = insets.top > 0 ? insets.top : 16;
 
   useEffect(() => {
     AsyncStorage.getItem(HISTORY_KEY).then((data) => {

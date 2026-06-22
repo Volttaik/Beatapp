@@ -80,7 +80,6 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(255,255,255,0.04)",
     backgroundColor: "rgba(8,8,16,0.68)",
     backdropFilter: "blur(16px) saturate(140%)" as any,
-    WebkitBackdropFilter: "blur(16px) saturate(140%)" as any,
     overflow: "hidden",
-  },
+  } as any,
 });

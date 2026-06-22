@@ -95,7 +95,7 @@ export default function LibraryScreen() {
               onPress={() => setActiveTab(tab.key)}
             >
               <GlassCard
-                style={[styles.tab, activeTab === tab.key && styles.tabActive]}
+                style={[styles.tab, ...(activeTab === tab.key ? [styles.tabActive] : [])]}
                 intensity={activeTab === tab.key ? 80 : 55}
                 shine={activeTab === tab.key}
               >

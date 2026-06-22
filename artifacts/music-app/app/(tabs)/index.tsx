@@ -210,7 +210,7 @@ export default function HomeScreen() {
   useEffect(() => { load(); }, []);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const topPad = Platform.OS === "web" ? 60 : insets.top;
+  const topPad = insets.top > 0 ? insets.top : 16;
 
   const quickItems = filter === "New"
     ? newReleases.slice(0, 8)
