@@ -12,15 +12,14 @@ import {
   View,
 } from "react-native";
 
+import GlassCard from "@/components/GlassCard";
+import ScreenBackground from "@/components/ScreenBackground";
 import TrackCard from "@/components/TrackCard";
 import { fetchJamendoTracks, searchJamendoTracks, Track } from "@/data/tracks";
-import { useColors } from "@/hooks/useColors";
 
 export default function SearchScreen() {
-  const colors = useColors();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
-
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Track[]>([]);
   const [defaultTracks, setDefaultTracks] = useState<Track[]>([]);
@@ -35,21 +34,11 @@ export default function SearchScreen() {
   }, []);
 
   const handleSearch = useCallback(async (q: string) => {
-    if (!q.trim()) {
-      setResults([]);
-      setSearched(false);
-      return;
-    }
-    setLoading(true);
-    setSearched(true);
-    try {
-      const tracks = await searchJamendoTracks(q.trim());
-      setResults(tracks);
-    } catch {
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
+    if (!q.trim()) { setResults([]); setSearched(false); return; }
+    setLoading(true); setSearched(true);
+    try { setResults(await searchJamendoTracks(q.trim())); }
+    catch { setResults([]); }
+    finally { setLoading(false); }
   }, []);
 
   const handleChangeText = (text: string) => {
@@ -58,27 +47,22 @@ export default function SearchScreen() {
     debounceRef.current = setTimeout(() => handleSearch(text), 600);
   };
 
-  const clearSearch = () => {
-    setQuery("");
-    setResults([]);
-    setSearched(false);
-    inputRef.current?.focus();
-  };
-
+  const clearSearch = () => { setQuery(""); setResults([]); setSearched(false); inputRef.current?.focus(); };
   const tracks = searched ? results : defaultTracks;
-  const topPadding = Platform.OS === "web" ? 67 : insets.top;
+  const topPad = Platform.OS === "web" ? 60 : insets.top;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: topPadding + 16 }]}>
-        <Text style={[styles.title, { color: colors.foreground }]}>Search</Text>
-        <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Feather name="search" size={18} color={colors.mutedForeground} />
+    <ScreenBackground accent="#1A0A4A">
+      {/* Fixed header */}
+      <View style={[st.header, { paddingTop: topPad + 16 }]}>
+        <Text style={st.pageTitle}>Search</Text>
+        <GlassCard style={st.searchBar} intensity={40}>
+          <Feather name="search" size={18} color="rgba(255,255,255,0.5)" style={{ marginLeft: 14 }} />
           <TextInput
             ref={inputRef}
-            style={[styles.input, { color: colors.foreground }]}
+            style={st.input}
             placeholder="Artists, songs, podcasts..."
-            placeholderTextColor={colors.mutedForeground}
+            placeholderTextColor="rgba(255,255,255,0.35)"
             value={query}
             onChangeText={handleChangeText}
             returnKeyType="search"
@@ -87,115 +71,64 @@ export default function SearchScreen() {
             autoCorrect={false}
           />
           {query.length > 0 && (
-            <Pressable onPress={clearSearch} hitSlop={8}>
-              <Feather name="x" size={18} color={colors.mutedForeground} />
+            <Pressable onPress={clearSearch} hitSlop={8} style={{ marginRight: 14 }}>
+              <Feather name="x" size={18} color="rgba(255,255,255,0.5)" />
             </Pressable>
           )}
-        </View>
+        </GlassCard>
       </View>
 
       {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primary} size="large" />
+        <View style={st.centered}>
+          <ActivityIndicator color="#A78BFA" size="large" />
         </View>
       ) : (
         <FlatList
           data={tracks}
           keyExtractor={(t) => t.id}
-          renderItem={({ item }) => (
-            <TrackCard track={item} queue={tracks} />
-          )}
+          renderItem={({ item }) => <TrackCard track={item} queue={tracks} />}
           ListHeaderComponent={
-            <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
-              {searched
-                ? results.length > 0
-                  ? `${results.length} results`
-                  : "No results"
-                : "Popular right now"}
+            <Text style={st.sectionLabel}>
+              {searched ? (results.length > 0 ? `${results.length} results` : "No results") : "Popular right now"}
             </Text>
           }
           ListEmptyComponent={
-            !loading && searched ? (
-              <View style={styles.emptyState}>
-                <Feather name="search" size={40} color={colors.mutedForeground} />
-                <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-                  No results found
-                </Text>
-                <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                  Try searching for something else
-                </Text>
+            searched ? (
+              <View style={st.emptyState}>
+                <Feather name="search" size={40} color="rgba(255,255,255,0.25)" />
+                <Text style={st.emptyTitle}>No results found</Text>
+                <Text style={st.emptyText}>Try searching for something else</Text>
               </View>
             ) : null
           }
-          contentContainerStyle={[
-            styles.list,
-            { paddingBottom: Platform.OS === "web" ? 34 : 16 },
-          ]}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 140, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
         />
       )}
-    </View>
+    </ScreenBackground>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 16,
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: "700",
-    fontFamily: Platform.OS === "ios" ? "Inter_700Bold" : undefined,
-  },
+const st = StyleSheet.create({
+  header: { paddingHorizontal: 16, paddingBottom: 12, gap: 14 },
+  pageTitle: { fontSize: 30, fontFamily: "Inter_700Bold", color: "#fff" },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     borderRadius: 14,
-    borderWidth: 1,
+    height: 48,
+    gap: 8,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    fontFamily: Platform.OS === "ios" ? "Inter_400Regular" : undefined,
+    fontFamily: "Inter_400Regular",
+    color: "#fff",
     padding: 0,
   },
-  list: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    gap: 2,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "500",
-    marginBottom: 8,
-    fontFamily: Platform.OS === "ios" ? "Inter_500Medium" : undefined,
-  },
-  centered: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-    gap: 12,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    fontFamily: Platform.OS === "ios" ? "Inter_600SemiBold" : undefined,
-  },
-  emptyText: {
-    fontSize: 14,
-    fontFamily: Platform.OS === "ios" ? "Inter_400Regular" : undefined,
-  },
+  sectionLabel: { fontSize: 13, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.5)", marginBottom: 8 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
+  emptyState: { alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 12 },
+  emptyTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold", color: "#fff" },
+  emptyText: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.45)" },
 });

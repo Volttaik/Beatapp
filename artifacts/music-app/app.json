@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Melodia",
+    "name": "Beat Stream",
     "slug": "music-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "music-app",
+    "scheme": "beatstream",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
@@ -15,10 +15,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.melodia.musicapp"
+      "bundleIdentifier": "com.beatstream.musicapp"
     },
     "android": {
-      "package": "com.melodia.musicapp"
+      "package": "com.beatstream.musicapp"
     },
     "web": {
       "favicon": "./assets/images/icon.png"
