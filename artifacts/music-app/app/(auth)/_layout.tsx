@@ -1,8 +1,11 @@
-import { useAuth } from "@clerk/expo";
 import { Redirect, Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 
-export default function AuthLayout() {
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+const hasClerk = publishableKey.startsWith("pk_");
+
+function AuthLayoutWithClerk() {
+  const { useAuth } = require("@clerk/expo");
   const { isSignedIn, isLoaded } = useAuth();
 
   if (!isLoaded) {
@@ -24,4 +27,11 @@ export default function AuthLayout() {
       <Stack.Screen name="forgot-password" />
     </Stack>
   );
+}
+
+export default function AuthLayout() {
+  if (!hasClerk) {
+    return <Redirect href="/(tabs)" />;
+  }
+  return <AuthLayoutWithClerk />;
 }

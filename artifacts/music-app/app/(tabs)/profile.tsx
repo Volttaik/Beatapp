@@ -1,4 +1,3 @@
-import { useAuth, useUser } from "@clerk/expo";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -19,6 +18,7 @@ import { useLibrary } from "@/contexts/LibraryContext";
 import { usePlaylists } from "@/contexts/PlaylistContext";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useStats } from "@/contexts/StatsContext";
+import { useAuthSafe, useUserSafe } from "@/hooks/useClerkSafe";
 
 function MenuItem({
   icon,
@@ -73,8 +73,8 @@ const mSt = StyleSheet.create({
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { signOut } = useAuth();
-  const { user } = useUser();
+  const { signOut } = useAuthSafe();
+  const { user } = useUserSafe();
   const { favorites } = useLibrary();
   const { playlists } = usePlaylists();
   const { recentlyPlayed } = usePlayer();

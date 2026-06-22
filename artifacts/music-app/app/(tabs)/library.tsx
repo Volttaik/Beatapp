@@ -15,12 +15,13 @@ import {
 
 import GlassCard from "@/components/GlassCard";
 import ScreenBackground from "@/components/ScreenBackground";
+import { useDownloads } from "@/contexts/DownloadContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { usePlaylists } from "@/contexts/PlaylistContext";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { formatDuration } from "@/data/tracks";
 
-type Tab = "playlists" | "recent" | "liked";
+type Tab = "playlists" | "recent" | "liked" | "downloads";
 
 function EmptyState({ icon, title, subtitle }: { icon: string; title: string; subtitle: string }) {
   return (
@@ -39,6 +40,7 @@ export default function LibraryScreen() {
   const { favorites } = useLibrary();
   const { playlists, deletePlaylist } = usePlaylists();
   const { recentlyPlayed, playTrack } = usePlayer();
+  const { downloads, deleteDownload, getLocalUri } = useDownloads();
   const [activeTab, setActiveTab] = useState<Tab>("playlists");
   const topPad = Platform.OS === "web" ? 60 : insets.top;
 
@@ -46,18 +48,24 @@ export default function LibraryScreen() {
     { key: "playlists", label: "Playlists", icon: "list" },
     { key: "recent", label: "Recent", icon: "clock" },
     { key: "liked", label: "Liked", icon: "heart" },
+    { key: "downloads", label: "Downloads", icon: "download" },
   ];
 
   const handleDeletePlaylist = (id: string, name: string) => {
     Alert.alert("Delete Playlist", `Delete "${name}"?`, [
       { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => deletePlaylist(id),
-      },
+      { text: "Delete", style: "destructive", onPress: () => deletePlaylist(id) },
     ]);
   };
+
+  const handleDeleteDownload = (id: string, title: string) => {
+    Alert.alert("Remove Download", `Remove "${title}" from downloads?`, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => deleteDownload(id) },
+    ]);
+  };
+
+  const totalSize = downloads.length;
 
   return (
     <ScreenBackground accent="#0A1A4A">
@@ -100,6 +108,11 @@ export default function LibraryScreen() {
               <Text style={[styles.tabText, activeTab === tab.key && { color: "#fff" }]}>
                 {tab.label}
               </Text>
+              {tab.key === "downloads" && totalSize > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{totalSize}</Text>
+                </View>
+              )}
             </Pressable>
           ))}
         </ScrollView>
@@ -187,7 +200,7 @@ export default function LibraryScreen() {
                 subtitle="Tap the heart on any track to save it here"
               />
             ) : (
-              favorites.map((t, i) => (
+              favorites.map((t) => (
                 <Pressable
                   key={t.id}
                   style={({ pressed }) => [styles.trackRow, pressed && { opacity: 0.65 }]}
@@ -201,6 +214,54 @@ export default function LibraryScreen() {
                   <Text style={styles.trackDuration}>{formatDuration(t.duration)}</Text>
                 </Pressable>
               ))
+            )}
+          </View>
+        )}
+
+        {/* Downloads Tab */}
+        {activeTab === "downloads" && (
+          <View style={styles.content}>
+            {downloads.length === 0 ? (
+              <EmptyState
+                icon="download"
+                title="No downloads yet"
+                subtitle="Tap the download icon on any track to save it for offline playback"
+              />
+            ) : (
+              <>
+                <Text style={styles.downloadsSubtitle}>
+                  {downloads.length} song{downloads.length !== 1 ? "s" : ""} · available offline
+                </Text>
+                {downloads.map((t) => (
+                  <Pressable
+                    key={t.id}
+                    style={({ pressed }) => [styles.trackRow, pressed && { opacity: 0.65 }]}
+                    onPress={() => {
+                      const localUri = getLocalUri(t.id) ?? undefined;
+                      playTrack(t, downloads, localUri);
+                    }}
+                    onLongPress={() => handleDeleteDownload(t.id, t.title)}
+                  >
+                    <View style={styles.artWrapper}>
+                      <Image source={t.artwork} style={styles.trackArt} contentFit="cover" />
+                      <View style={styles.offlineBadge}>
+                        <Feather name="download" size={8} color="#fff" />
+                      </View>
+                    </View>
+                    <View style={styles.trackInfo}>
+                      <Text style={styles.trackTitle} numberOfLines={1}>{t.title}</Text>
+                      <Text style={styles.trackMeta} numberOfLines={1}>{t.artist}</Text>
+                    </View>
+                    <Pressable
+                      onPress={() => handleDeleteDownload(t.id, t.title)}
+                      hitSlop={8}
+                      style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+                    >
+                      <Feather name="trash-2" size={16} color="rgba(255,255,255,0.3)" />
+                    </Pressable>
+                  </Pressable>
+                ))}
+              </>
             )}
           </View>
         )}
@@ -242,7 +303,23 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     color: "rgba(255,255,255,0.5)",
   },
+  badge: {
+    backgroundColor: "#A78BFA",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: { fontSize: 10, color: "#fff", fontFamily: "Inter_700Bold" },
   content: { paddingHorizontal: 16 },
+  downloadsSubtitle: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.4)",
+    marginBottom: 12,
+  },
   playlistRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -279,7 +356,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(255,255,255,0.07)",
   },
+  artWrapper: { position: "relative" },
   trackArt: { width: 50, height: 50, borderRadius: 8, backgroundColor: "#1C1C2A" },
+  offlineBadge: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#7C3AED",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   trackInfo: { flex: 1 },
   trackTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#fff" },
   trackMeta: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.45)", marginTop: 2 },

@@ -1,5 +1,4 @@
 import { Feather } from "@expo/vector-icons";
-import { useUser } from "@clerk/expo";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -22,6 +21,7 @@ import TrackCard from "@/components/TrackCard";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { fetchJamendoTracks, fetchTracksByTag, Track, FEATURED_GENRES } from "@/data/tracks";
 import { useColors } from "@/hooks/useColors";
+import { useUserSafe } from "@/hooks/useClerkSafe";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -31,7 +31,7 @@ function getGreeting() {
 }
 
 function UserAvatar() {
-  const { user } = useUser();
+  const { user } = useUserSafe();
   const initials = user?.firstName?.[0] ?? user?.emailAddresses?.[0]?.emailAddress?.[0] ?? "U";
   const palette = ["#E8632A", "#7C3AED", "#1DB954", "#E91E8C", "#F59E0B"];
   const bg = palette[initials.charCodeAt(0) % palette.length];
@@ -151,7 +151,7 @@ const GENRE_COLORS: Record<string, string> = {
 };
 
 export default function HomeScreen() {
-  const { user } = useUser();
+  const { user } = useUserSafe();
   const insets = useSafeAreaInsets();
   const { recentlyPlayed, playTrack } = usePlayer();
   const [trending, setTrending] = useState<Track[]>([]);

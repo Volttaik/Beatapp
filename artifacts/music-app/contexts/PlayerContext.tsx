@@ -18,7 +18,7 @@ interface PlayerContextType {
   position: number;
   duration: number;
   isLoading: boolean;
-  playTrack: (track: Track, queue?: Track[]) => Promise<void>;
+  playTrack: (track: Track, queue?: Track[], localUri?: string) => Promise<void>;
   togglePlayPause: () => Promise<void>;
   playNext: () => Promise<void>;
   playPrev: () => Promise<void>;
@@ -30,6 +30,7 @@ interface PlayerContextType {
   repeatMode: "none" | "all" | "one";
   cycleRepeat: () => void;
   recentlyPlayed: Track[];
+  setLocalUriResolver: (fn: ((id: string) => string | null) | null) => void;
 }
 
 const PlayerContext = createContext<PlayerContextType | null>(null);
@@ -50,6 +51,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const queueIndexRef = useRef<number>(0);
   const queueRef = useRef<Track[]>([]);
   const repeatModeRef = useRef<"none" | "all" | "one">("none");
+  const localUriResolverRef = useRef<((id: string) => string | null) | null>(null);
+
+  const setLocalUriResolver = useCallback(
+    (fn: ((id: string) => string | null) | null) => {
+      localUriResolverRef.current = fn;
+    },
+    []
+  );
 
   useEffect(() => {
     queueRef.current = queue;
@@ -109,15 +118,17 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loadAndPlay = useCallback(
-    async (track: Track, q: Track[] = [], idx: number = 0) => {
+    async (track: Track, q: Track[] = [], idx: number = 0, overrideUri?: string) => {
       try {
         setIsLoading(true);
         if (soundRef.current) {
           await soundRef.current.unloadAsync();
           soundRef.current = null;
         }
+        const localUri = overrideUri ?? localUriResolverRef.current?.(track.id) ?? null;
+        const uri = localUri ?? track.audioUrl;
         const { sound } = await Audio.Sound.createAsync(
-          { uri: track.audioUrl },
+          { uri },
           { shouldPlay: true, progressUpdateIntervalMillis: 500 },
           onPlaybackStatusUpdate
         );
@@ -127,7 +138,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setQueueIndex(idx);
         setIsPlaying(true);
         addToRecentlyPlayed(track);
-      } catch (err) {
+      } catch {
         setIsPlaying(false);
       } finally {
         setIsLoading(false);
@@ -137,11 +148,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   );
 
   const playTrack = useCallback(
-    async (track: Track, newQueue?: Track[]) => {
+    async (track: Track, newQueue?: Track[], localUri?: string) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const q = newQueue ?? [track];
       const idx = q.findIndex((t) => t.id === track.id);
-      await loadAndPlay(track, q, idx >= 0 ? idx : 0);
+      await loadAndPlay(track, q, idx >= 0 ? idx : 0, localUri);
     },
     [loadAndPlay]
   );
@@ -230,6 +241,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         repeatMode,
         cycleRepeat,
         recentlyPlayed,
+        setLocalUriResolver,
       }}
     >
       {children}

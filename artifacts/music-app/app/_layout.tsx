@@ -17,6 +17,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { DownloadProvider } from "@/contexts/DownloadContext";
 import { LibraryProvider } from "@/contexts/LibraryContext";
 import { PlayerProvider } from "@/contexts/PlayerContext";
 import { PlaylistProvider } from "@/contexts/PlaylistContext";
@@ -26,8 +27,9 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
 const proxyUrl = process.env.EXPO_PUBLIC_CLERK_PROXY_URL || undefined;
+const hasClerk = publishableKey.startsWith("pk_");
 
 function RootLayoutNav() {
   return (
@@ -76,6 +78,22 @@ function RootLayoutNav() {
   );
 }
 
+function AppProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <StatsProvider>
+      <PlayerProvider>
+        <LibraryProvider>
+          <PlaylistProvider>
+            <DownloadProvider>
+              {children}
+            </DownloadProvider>
+          </PlaylistProvider>
+        </LibraryProvider>
+      </PlayerProvider>
+    </StatsProvider>
+  );
+}
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
@@ -100,32 +118,32 @@ export default function RootLayout() {
     );
   }
 
+  const inner = (
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#08080F" }}>
+      <KeyboardProvider>
+        <AppProviders>
+          <RootLayoutNav />
+        </AppProviders>
+      </KeyboardProvider>
+    </GestureHandlerRootView>
+  );
+
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
-        <ClerkProvider
-          publishableKey={publishableKey}
-          tokenCache={tokenCache}
-          proxyUrl={proxyUrl}
-        >
-          <ClerkLoaded>
-            <QueryClientProvider client={queryClient}>
-              <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#08080F" }}>
-                <KeyboardProvider>
-                  <StatsProvider>
-                    <PlayerProvider>
-                      <LibraryProvider>
-                        <PlaylistProvider>
-                          <RootLayoutNav />
-                        </PlaylistProvider>
-                      </LibraryProvider>
-                    </PlayerProvider>
-                  </StatsProvider>
-                </KeyboardProvider>
-              </GestureHandlerRootView>
-            </QueryClientProvider>
-          </ClerkLoaded>
-        </ClerkProvider>
+        <QueryClientProvider client={queryClient}>
+          {hasClerk ? (
+            <ClerkProvider
+              publishableKey={publishableKey}
+              tokenCache={tokenCache}
+              proxyUrl={proxyUrl}
+            >
+              <ClerkLoaded>{inner}</ClerkLoaded>
+            </ClerkProvider>
+          ) : (
+            inner
+          )}
+        </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
   );
