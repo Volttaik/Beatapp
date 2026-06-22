@@ -17,7 +17,8 @@ import {
 type Step = "email" | "code" | "new-password" | "done";
 
 export default function ForgotPasswordScreen() {
-  const { signIn, errors, fetchStatus } = useSignIn();
+  const signInResult = useSignIn();
+  const signIn = (signInResult as any)?.signIn ?? (signInResult as any)?.resource ?? null;
   const router = useRouter();
 
   const [step, setStep] = useState<Step>("email");
@@ -25,25 +26,34 @@ export default function ForgotPasswordScreen() {
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSendCode = async () => {
+    if (!signIn) return;
+    setLoading(true);
     try {
-      await signIn.create({ identifier: email });
-      await signIn.prepareFirstFactor({
+      await (signIn as any).create({ identifier: email });
+      const supportedFactors = (signIn as any).supportedFirstFactors ?? [];
+      const emailFactor = supportedFactors.find(
+        (f: any) => f.strategy === "reset_password_email_code"
+      );
+      await (signIn as any).prepareFirstFactor({
         strategy: "reset_password_email_code",
-        emailAddressId: signIn.supportedFirstFactors?.find(
-          (f) => f.strategy === "reset_password_email_code"
-        )?.emailAddressId ?? "",
+        emailAddressId: emailFactor?.emailAddressId ?? "",
       });
       setStep("code");
     } catch (e: any) {
-      console.error(e);
+      console.error("Send code error:", e);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleVerifyCode = async () => {
+    if (!signIn) return;
+    setLoading(true);
     try {
-      const result = await signIn.attemptFirstFactor({
+      const result = await (signIn as any).attemptFirstFactor({
         strategy: "reset_password_email_code",
         code,
       });
@@ -51,21 +61,22 @@ export default function ForgotPasswordScreen() {
         setStep("new-password");
       }
     } catch (e: any) {
-      console.error(e);
+      console.error("Verify code error:", e);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
+    if (!signIn) return;
+    setLoading(true);
     try {
-      await signIn.resetPassword({ password: newPassword });
-      await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          if (session?.currentTask) return;
-          router.replace("/(tabs)" as any);
-        },
-      });
+      await (signIn as any).resetPassword({ password: newPassword });
+      setStep("done");
     } catch (e: any) {
-      console.error(e);
+      console.error("Reset password error:", e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -92,20 +103,18 @@ export default function ForgotPasswordScreen() {
         <View style={styles.container}>
           <View style={styles.logoContainer}>
             <Image
-              source={require("@/assets/images/icon.png")}
+              source={require("@/assets/images/beatstream-logo.png")}
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.appName}>Beat Stream</Text>
+            <Text style={styles.appName}>Beatstream</Text>
           </View>
 
           <View style={styles.card}>
             {step === "email" && (
               <>
                 <Text style={styles.title}>Forgot password?</Text>
-                <Text style={styles.subtitle}>
-                  Enter your email and we'll send a reset code
-                </Text>
+                <Text style={styles.subtitle}>Enter your email and we'll send a reset code</Text>
 
                 <Text style={styles.label}>Email</Text>
                 <TextInput
@@ -119,11 +128,11 @@ export default function ForgotPasswordScreen() {
                 />
 
                 <Pressable
-                  style={[styles.primaryBtn, (!email || fetchStatus === "fetching") && styles.disabled]}
+                  style={[styles.primaryBtn, (!email || loading) && styles.disabled]}
                   onPress={handleSendCode}
-                  disabled={!email || fetchStatus === "fetching"}
+                  disabled={!email || loading}
                 >
-                  {fetchStatus === "fetching" ? (
+                  {loading ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
                     <Text style={styles.primaryBtnText}>Send Reset Code</Text>
@@ -135,9 +144,7 @@ export default function ForgotPasswordScreen() {
             {step === "code" && (
               <>
                 <Text style={styles.title}>Enter code</Text>
-                <Text style={styles.subtitle}>
-                  We sent a code to {email}
-                </Text>
+                <Text style={styles.subtitle}>We sent a code to {email}</Text>
 
                 <Text style={styles.label}>Reset code</Text>
                 <TextInput
@@ -152,12 +159,12 @@ export default function ForgotPasswordScreen() {
                 />
 
                 <Pressable
-                  style={[styles.primaryBtn, (!code || fetchStatus === "fetching") && styles.disabled]}
+                  style={[styles.primaryBtn, (!code || loading) && styles.disabled]}
                   onPress={handleVerifyCode}
-                  disabled={!code || fetchStatus === "fetching"}
+                  disabled={!code || loading}
                 >
-                  {fetchStatus === "fetching" ? (
-                    <ActivityIndicator color="#fff" />
+                  {loading ? (
+                    <ActivityIndicator color="#fff" /> 
                   ) : (
                     <Text style={styles.primaryBtnText}>Verify Code</Text>
                   )}
@@ -172,9 +179,7 @@ export default function ForgotPasswordScreen() {
             {step === "new-password" && (
               <>
                 <Text style={styles.title}>New password</Text>
-                <Text style={styles.subtitle}>
-                  Choose a strong new password
-                </Text>
+                <Text style={styles.subtitle}>Choose a strong new password</Text>
 
                 <Text style={styles.label}>New password</Text>
                 <View style={styles.passwordRow}>
@@ -195,11 +200,11 @@ export default function ForgotPasswordScreen() {
                 </View>
 
                 <Pressable
-                  style={[styles.primaryBtn, (!newPassword || fetchStatus === "fetching") && styles.disabled]}
+                  style={[styles.primaryBtn, (!newPassword || loading) && styles.disabled]}
                   onPress={handleResetPassword}
-                  disabled={!newPassword || fetchStatus === "fetching"}
+                  disabled={!newPassword || loading}
                 >
-                  {fetchStatus === "fetching" ? (
+                  {loading ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
                     <Text style={styles.primaryBtnText}>Update Password</Text>
@@ -238,6 +243,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     marginBottom: 12,
+    borderRadius: 16,
   },
   appName: {
     color: "#fff",
@@ -324,11 +330,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_500Medium",
     textAlign: "center",
-  },
-  errorText: {
-    color: "#EF4444",
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    marginTop: 4,
   },
 });

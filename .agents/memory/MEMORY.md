@@ -1,0 +1,1 @@
+- [Beatstream app architecture](beatstream-arch.md) — Expo 54 music app with Clerk auth, Jamendo API, 5-tab nav, playlist/queue/stats system

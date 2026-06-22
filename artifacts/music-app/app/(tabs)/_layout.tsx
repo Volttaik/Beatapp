@@ -1,15 +1,15 @@
 import { useAuth } from "@clerk/expo";
-import { BottomTabBar } from "@react-navigation/bottom-tabs";
 import { BlurView } from "expo-blur";
 import { Redirect, Tabs } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { SymbolView } from "expo-symbols";
 import React from "react";
-import { ActivityIndicator, Platform, StyleSheet, View, useColorScheme } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
 
 import MiniPlayer from "@/components/MiniPlayer";
 import { usePlayer } from "@/contexts/PlayerContext";
-import { useColors } from "@/hooks/useColors";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const BottomTabBar = require("@react-navigation/bottom-tabs").BottomTabBar as React.ComponentType<any>;
 
 function CustomTabBar(props: any) {
   const { currentTrack } = usePlayer();
@@ -22,9 +22,6 @@ function CustomTabBar(props: any) {
 }
 
 export default function TabLayout() {
-  const colors = useColors();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
   const { isSignedIn, isLoaded } = useAuth();
@@ -46,30 +43,27 @@ export default function TabLayout() {
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.foreground,
-        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarActiveTintColor: "#A78BFA",
+        tabBarInactiveTintColor: "rgba(255,255,255,0.4)",
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: isIOS ? "transparent" : "#121212",
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
+          backgroundColor: isIOS ? "transparent" : "#0E0E1A",
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: "rgba(255,255,255,0.08)",
           elevation: 0,
           ...(isWeb ? { height: 70 } : {}),
         },
         tabBarBackground: () =>
           isIOS ? (
-            <BlurView
-              intensity={90}
-              tint="dark"
-              style={StyleSheet.absoluteFill}
-            />
+            <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
           ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: "#121212" }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: "#0E0E1A" }]} />
           ) : null,
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontFamily: "Inter_500Medium",
           marginTop: -2,
+          marginBottom: 2,
         },
       }}
     >
@@ -77,48 +71,45 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, focused }) =>
-            isIOS ? (
-              <SymbolView name={focused ? "house.fill" : "house"} tintColor={color} size={24} />
-            ) : (
-              <Feather name="home" size={22} color={color} />
-            ),
+          tabBarIcon: ({ color, focused }) => (
+            <Feather name={focused ? "home" : "home"} size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
           title: "Search",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="magnifyingglass" tintColor={color} size={24} />
-            ) : (
-              <Feather name="search" size={22} color={color} />
-            ),
+          tabBarIcon: ({ color }) => (
+            <Feather name="search" size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="library"
         options={{
-          title: "Your Library",
-          tabBarIcon: ({ color, focused }) =>
-            isIOS ? (
-              <SymbolView name={focused ? "books.vertical.fill" : "books.vertical"} tintColor={color} size={24} />
-            ) : (
-              <Feather name="book-open" size={22} color={color} />
-            ),
+          title: "Library",
+          tabBarIcon: ({ color }) => (
+            <Feather name="book-open" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          title: "Favorites",
+          tabBarIcon: ({ color, focused }) => (
+            <Feather name={focused ? "heart" : "heart"} size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Account",
-          tabBarIcon: ({ color, focused }) =>
-            isIOS ? (
-              <SymbolView name={focused ? "person.fill" : "person"} tintColor={color} size={24} />
-            ) : (
-              <Feather name="user" size={22} color={color} />
-            ),
+          title: "Profile",
+          tabBarIcon: ({ color }) => (
+            <Feather name="user" size={22} color={color} />
+          ),
         }}
       />
     </Tabs>

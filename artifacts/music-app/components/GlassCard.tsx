@@ -48,9 +48,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
     backgroundColor: "rgba(255,255,255,0.08)",
-    // @ts-ignore - web only
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
     overflow: "hidden",
-  },
+  } as any,
 });

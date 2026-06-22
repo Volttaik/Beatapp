@@ -79,8 +79,8 @@ export default function SignInScreen() {
         <ScrollView contentContainerStyle={st.scroll} keyboardShouldPersistTaps="handled">
           {/* Logo */}
           <View style={st.logoWrap}>
-            <Image source={require("@/assets/images/icon.png")} style={st.logo} resizeMode="contain" />
-            <Text style={st.appName}>Beat Stream</Text>
+            <Image source={require("@/assets/images/beatstream-logo.png")} style={st.logo} resizeMode="contain" />
+            <Text style={st.appName}>Beatstream</Text>
             <Text style={st.tagline}>Your music, everywhere</Text>
           </View>
 

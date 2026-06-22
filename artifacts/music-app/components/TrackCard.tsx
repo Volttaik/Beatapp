@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 
+import AddToPlaylistModal from "@/components/AddToPlaylistModal";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { formatDuration, Track } from "@/data/tracks";
@@ -26,6 +27,7 @@ const TrackCard = memo(function TrackCard({ track, queue, showIndex }: TrackCard
   const colors = useColors();
   const { playTrack, currentTrack, isPlaying, isLoading } = usePlayer();
   const { isFavorite, toggleFavorite } = useLibrary();
+  const [showModal, setShowModal] = useState(false);
 
   const isActive = currentTrack?.id === track.id;
   const liked = isFavorite(track.id);
@@ -34,77 +36,94 @@ const TrackCard = memo(function TrackCard({ track, queue, showIndex }: TrackCard
     playTrack(track, queue ?? [track]);
   };
 
-  const handleLike = () => {
-    toggleFavorite(track);
+  const handleLongPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowModal(true);
   };
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.container,
-        { backgroundColor: isActive ? colors.secondary : "transparent" },
-        pressed && { opacity: 0.7 },
-      ]}
-      onPress={handlePress}
-    >
-      <View style={styles.left}>
-        {showIndex !== undefined && !isActive ? (
-          <Text style={[styles.index, { color: colors.mutedForeground }]}>
-            {showIndex + 1}
-          </Text>
-        ) : null}
-        <View style={styles.artworkContainer}>
-          <Image
-            source={track.artwork}
-            style={styles.artwork}
-            contentFit="cover"
-          />
-          {isActive && (
-            <View style={[styles.activeOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
-              {isLoading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Feather
-                  name={isPlaying ? "pause" : "play"}
-                  size={14}
-                  color="#fff"
-                />
-              )}
-            </View>
-          )}
+    <>
+      <Pressable
+        style={({ pressed }) => [
+          styles.container,
+          { backgroundColor: isActive ? colors.secondary : "transparent" },
+          pressed && { opacity: 0.7 },
+        ]}
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+      >
+        <View style={styles.left}>
+          {showIndex !== undefined && !isActive ? (
+            <Text style={[styles.index, { color: colors.mutedForeground }]}>
+              {showIndex + 1}
+            </Text>
+          ) : null}
+          <View style={styles.artworkContainer}>
+            <Image
+              source={track.artwork}
+              style={styles.artwork}
+              contentFit="cover"
+            />
+            {isActive && (
+              <View style={[styles.activeOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Feather
+                    name={isPlaying ? "pause" : "play"}
+                    size={14}
+                    color="#fff"
+                  />
+                )}
+              </View>
+            )}
+          </View>
+          <View style={styles.info}>
+            <Text
+              style={[
+                styles.title,
+                { color: isActive ? "#A78BFA" : colors.foreground },
+              ]}
+              numberOfLines={1}
+            >
+              {track.title}
+            </Text>
+            <Text style={[styles.artist, { color: colors.mutedForeground }]} numberOfLines={1}>
+              {track.artist}
+            </Text>
+          </View>
         </View>
-        <View style={styles.info}>
-          <Text
-            style={[
-              styles.title,
-              { color: isActive ? colors.primary : colors.foreground },
-            ]}
-            numberOfLines={1}
+        <View style={styles.right}>
+          <Text style={[styles.duration, { color: colors.mutedForeground }]}>
+            {formatDuration(track.duration)}
+          </Text>
+          <Pressable
+            onPress={() => toggleFavorite(track)}
+            hitSlop={8}
+            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
           >
-            {track.title}
-          </Text>
-          <Text style={[styles.artist, { color: colors.mutedForeground }]} numberOfLines={1}>
-            {track.artist}
-          </Text>
+            <Feather
+              name="heart"
+              size={18}
+              color={liked ? "#A78BFA" : colors.mutedForeground}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => setShowModal(true)}
+            hitSlop={8}
+            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+          >
+            <Feather name="more-vertical" size={18} color="rgba(255,255,255,0.3)" />
+          </Pressable>
         </View>
-      </View>
-      <View style={styles.right}>
-        <Text style={[styles.duration, { color: colors.mutedForeground }]}>
-          {formatDuration(track.duration)}
-        </Text>
-        <Pressable
-          onPress={handleLike}
-          hitSlop={8}
-          style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-        >
-          <Feather
-            name={liked ? "heart" : "heart"}
-            size={18}
-            color={liked ? colors.primary : colors.mutedForeground}
-          />
-        </Pressable>
-      </View>
-    </Pressable>
+      </Pressable>
+
+      <AddToPlaylistModal
+        visible={showModal}
+        track={track}
+        onClose={() => setShowModal(false)}
+      />
+    </>
   );
 });
 
@@ -124,6 +143,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     gap: 12,
+    minWidth: 0,
   },
   index: {
     width: 20,
@@ -149,6 +169,7 @@ const styles = StyleSheet.create({
   info: {
     flex: 1,
     gap: 3,
+    minWidth: 0,
   },
   title: {
     fontSize: 15,
@@ -162,7 +183,8 @@ const styles = StyleSheet.create({
   right: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
+    flexShrink: 0,
   },
   duration: {
     fontSize: 13,

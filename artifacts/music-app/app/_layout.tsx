@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -18,6 +19,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LibraryProvider } from "@/contexts/LibraryContext";
 import { PlayerProvider } from "@/contexts/PlayerContext";
+import { PlaylistProvider } from "@/contexts/PlaylistContext";
+import { StatsProvider } from "@/contexts/StatsContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -33,6 +36,36 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="player"
+        options={{
+          presentation: "modal",
+          headerShown: false,
+          animation: "slide_from_bottom",
+        }}
+      />
+      <Stack.Screen
+        name="queue"
+        options={{
+          presentation: "modal",
+          headerShown: false,
+          animation: "slide_from_bottom",
+        }}
+      />
+      <Stack.Screen
+        name="settings"
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="playlist/[id]"
+        options={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="playlist/create"
         options={{
           presentation: "modal",
           headerShown: false,
@@ -57,7 +90,15 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) return null;
+  if (!fontsLoaded && !fontError) {
+    return (
+      <SafeAreaProvider>
+        <View style={{ flex: 1, backgroundColor: "#08080F", alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator size="large" color="#7C3AED" />
+        </View>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
@@ -69,13 +110,17 @@ export default function RootLayout() {
         >
           <ClerkLoaded>
             <QueryClientProvider client={queryClient}>
-              <GestureHandlerRootView style={{ flex: 1 }}>
+              <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#08080F" }}>
                 <KeyboardProvider>
-                  <PlayerProvider>
-                    <LibraryProvider>
-                      <RootLayoutNav />
-                    </LibraryProvider>
-                  </PlayerProvider>
+                  <StatsProvider>
+                    <PlayerProvider>
+                      <LibraryProvider>
+                        <PlaylistProvider>
+                          <RootLayoutNav />
+                        </PlaylistProvider>
+                      </LibraryProvider>
+                    </PlayerProvider>
+                  </StatsProvider>
                 </KeyboardProvider>
               </GestureHandlerRootView>
             </QueryClientProvider>

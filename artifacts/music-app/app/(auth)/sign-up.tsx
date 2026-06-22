@@ -110,17 +110,17 @@ export default function SignUpScreen() {
         <View style={styles.container}>
           <View style={styles.logoContainer}>
             <Image
-              source={require("@/assets/images/icon.png")}
+              source={require("@/assets/images/beatstream-logo.png")}
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.appName}>Beat Stream</Text>
+            <Text style={styles.appName}>Beatstream</Text>
             <Text style={styles.tagline}>Your music, everywhere</Text>
           </View>
 
           <View style={styles.card}>
             <Text style={styles.title}>Create account</Text>
-            <Text style={styles.subtitle}>Join Beat Stream for free</Text>
+            <Text style={styles.subtitle}>Join Beatstream for free</Text>
 
             <Text style={styles.label}>Email</Text>
             <TextInput
