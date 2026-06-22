@@ -18,7 +18,11 @@
       "bundleIdentifier": "com.beatstream.musicapp"
     },
     "android": {
-      "package": "com.beatstream.musicapp"
+      "package": "com.beatstream.musicapp",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -37,6 +41,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4f4aec78-eeda-4317-bf29-8f65b55b84e2"
+      }
     }
   }
 }
