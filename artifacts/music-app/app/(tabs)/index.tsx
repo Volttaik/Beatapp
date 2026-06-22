@@ -254,10 +254,8 @@ export default function HomeScreen() {
             <Text style={st.greeting}>{getGreeting()}</Text>
             <Text style={st.username} numberOfLines={1}>{firstName}</Text>
           </View>
-          <Pressable onPress={() => router.push("/settings" as any)} hitSlop={8}>
-            <GlassCard style={st.iconBtn} intensity={50}>
-              <Feather name="settings" size={17} color="rgba(255,255,255,0.6)" />
-            </GlassCard>
+          <Pressable onPress={() => router.push("/settings" as any)} hitSlop={12}>
+            <Feather name="settings" size={20} color="rgba(255,255,255,0.55)" />
           </Pressable>
         </View>
 

@@ -51,34 +51,14 @@ function GlassTabButton({
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [tab.btn, pressed && { opacity: 0.65 }]}
+      style={({ pressed }) => [tab.btn, pressed && { opacity: 0.55 }]}
     >
       <View style={tab.col}>
-        <BlurView
-          intensity={focused ? 80 : 50}
-          tint="dark"
-          style={[tab.blur, focused && tab.blurActive]}
-        >
-          <LinearGradient
-            colors={
-              focused
-                ? ["rgba(255,255,255,0.22)", "rgba(255,255,255,0.05)", "transparent"]
-                : ["rgba(255,255,255,0.07)", "transparent"]
-            }
-            locations={focused ? [0, 0.4, 1] : [0, 1]}
-            style={StyleSheet.absoluteFill}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            pointerEvents="none"
-          />
-          <View style={tab.iconWrap}>
-            <Feather
-              name={icon}
-              size={19}
-              color={focused ? "#ffffff" : "rgba(255,255,255,0.35)"}
-            />
-          </View>
-        </BlurView>
+        <Feather
+          name={icon}
+          size={22}
+          color={focused ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.28)"}
+        />
         <Text
           style={[tab.label, focused ? tab.labelActive : tab.labelInactive]}
           numberOfLines={1}
@@ -96,12 +76,21 @@ function FloatingTabBar({ state, navigation }: any) {
 
   return (
     <View
-      style={[bar.wrapper, { paddingBottom: insets.bottom + 4 }]}
+      style={[bar.wrapper, { paddingBottom: insets.bottom }]}
       pointerEvents="box-none"
     >
       {currentTrack ? <MiniPlayer /> : null}
-      <View style={bar.row}>
-        {state.routes.map((route: any, index: number) => {
+      <BlurView intensity={85} tint="dark" style={bar.blurBar}>
+        <LinearGradient
+          colors={["rgba(255,255,255,0.09)", "rgba(255,255,255,0.02)", "transparent"]}
+          locations={[0, 0.4, 1]}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          pointerEvents="none"
+        />
+        <View style={bar.row}>
+          {state.routes.map((route: any, index: number) => {
           const focused = state.index === index;
           const cfg = TAB_CONFIG.find((c) => c.name === route.name);
           return (
@@ -123,7 +112,8 @@ function FloatingTabBar({ state, navigation }: any) {
             />
           );
         })}
-      </View>
+        </View>
+      </BlurView>
     </View>
   );
 }
@@ -259,34 +249,11 @@ const tab = StyleSheet.create({
   btn: {
     flex: 1,
     alignItems: "center",
+    paddingVertical: 10,
   },
   col: {
     alignItems: "center",
     gap: 5,
-  },
-  blur: {
-    borderRadius: 16,
-    overflow: "hidden",
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.16)",
-    borderLeftColor: "rgba(255,255,255,0.09)",
-    borderRightColor: "rgba(255,255,255,0.05)",
-    borderBottomColor: "rgba(255,255,255,0.03)",
-  },
-  blurActive: {
-    borderTopColor: "rgba(255,255,255,0.30)",
-    borderLeftColor: "rgba(255,255,255,0.16)",
-    borderRightColor: "rgba(255,255,255,0.08)",
-  },
-  iconWrap: {
-    width: 52,
-    height: 34,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(8,8,18,0.44)",
   },
   label: {
     fontSize: 10,
@@ -294,10 +261,10 @@ const tab = StyleSheet.create({
     letterSpacing: 0.2,
   },
   labelActive: {
-    color: "#ffffff",
+    color: "rgba(255,255,255,0.90)",
   },
   labelInactive: {
-    color: "rgba(255,255,255,0.32)",
+    color: "rgba(255,255,255,0.28)",
   },
 });
 
@@ -308,12 +275,16 @@ const bar = StyleSheet.create({
     left: 0,
     right: 0,
   },
+  blurBar: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.10)",
+    overflow: "hidden",
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingTop: 6,
+    paddingHorizontal: 8,
+    paddingTop: 2,
   },
 });
 
