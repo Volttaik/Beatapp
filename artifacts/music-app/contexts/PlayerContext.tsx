@@ -9,6 +9,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { Platform } from "react-native";
 import { Track } from "@/data/tracks";
 
 interface PlayerContextType {
@@ -18,6 +19,7 @@ interface PlayerContextType {
   position: number;
   duration: number;
   isLoading: boolean;
+  playbackError: string | null;
   playTrack: (track: Track, queue?: Track[], localUri?: string) => Promise<void>;
   togglePlayPause: () => Promise<void>;
   playNext: () => Promise<void>;
@@ -38,25 +40,24 @@ const PlayerContext = createContext<PlayerContextType | null>(null);
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [queue, setQueue] = useState<Track[]>([]);
-  const [queueIndex, setQueueIndex] = useState<number>(0);
+  const [queueIndex, setQueueIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [isShuffled, setIsShuffled] = useState(false);
   const [repeatMode, setRepeatMode] = useState<"none" | "all" | "one">("none");
   const [recentlyPlayed, setRecentlyPlayed] = useState<Track[]>([]);
 
   const soundRef = useRef<Audio.Sound | null>(null);
-  const queueIndexRef = useRef<number>(0);
+  const queueIndexRef = useRef(0);
   const queueRef = useRef<Track[]>([]);
   const repeatModeRef = useRef<"none" | "all" | "one">("none");
   const localUriResolverRef = useRef<((id: string) => string | null) | null>(null);
 
   const setLocalUriResolver = useCallback(
-    (fn: ((id: string) => string | null) | null) => {
-      localUriResolverRef.current = fn;
-    },
+    (fn: ((id: string) => string | null) | null) => { localUriResolverRef.current = fn; },
     []
   );
 
@@ -67,16 +68,17 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [queue, queueIndex, repeatMode]);
 
   useEffect(() => {
-    Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: true,
-      shouldDuckAndroid: true,
-    });
+    // Only call setAudioModeAsync on native — not supported on web
+    if (Platform.OS !== "web") {
+      Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+      }).catch(() => {});
+    }
     loadRecentlyPlayed();
-    return () => {
-      soundRef.current?.unloadAsync();
-    };
+    return () => { soundRef.current?.unloadAsync().catch(() => {}); };
   }, []);
 
   const loadRecentlyPlayed = async () => {
@@ -96,33 +98,42 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const onPlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
-    if (!status.isLoaded) return;
+    if (!status.isLoaded) {
+      if ((status as any).error) {
+        setPlaybackError("Playback error — try another track.");
+        setIsLoading(false);
+      }
+      return;
+    }
     setIsPlaying(status.isPlaying);
     setPosition(status.positionMillis);
     setDuration(status.durationMillis ?? 0);
+    if (status.isLoaded && !status.isBuffering) setPlaybackError(null);
 
     if (status.didJustFinish) {
       const mode = repeatModeRef.current;
       const q = queueRef.current;
       const idx = queueIndexRef.current;
-
       if (mode === "one") {
-        soundRef.current?.replayAsync();
+        soundRef.current?.replayAsync().catch(() => {});
       } else if (mode === "all" || idx < q.length - 1) {
         const nextIdx = idx < q.length - 1 ? idx + 1 : 0;
-        if (q[nextIdx]) {
-          loadAndPlay(q[nextIdx], q, nextIdx);
-        }
+        if (q[nextIdx]) loadAndPlay(q[nextIdx], q, nextIdx);
       }
     }
   }, []);
 
   const loadAndPlay = useCallback(
-    async (track: Track, q: Track[] = [], idx: number = 0, overrideUri?: string) => {
+    async (track: Track, q: Track[] = [], idx = 0, overrideUri?: string) => {
+      if (!track?.audioUrl) {
+        setPlaybackError("This track has no audio URL.");
+        return;
+      }
       try {
         setIsLoading(true);
+        setPlaybackError(null);
         if (soundRef.current) {
-          await soundRef.current.unloadAsync();
+          await soundRef.current.unloadAsync().catch(() => {});
           soundRef.current = null;
         }
         const localUri = overrideUri ?? localUriResolverRef.current?.(track.id) ?? null;
@@ -138,7 +149,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setQueueIndex(idx);
         setIsPlaying(true);
         addToRecentlyPlayed(track);
-      } catch {
+      } catch (e: any) {
+        const msg = e?.message ?? "Could not load audio.";
+        setPlaybackError(
+          msg.includes("network") || msg.includes("Network")
+            ? "Network error — check your connection."
+            : msg.includes("format") || msg.includes("Format")
+            ? "Unsupported audio format."
+            : "Could not play track. Try another one."
+        );
         setIsPlaying(false);
       } finally {
         setIsLoading(false);
@@ -149,22 +168,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const playTrack = useCallback(
     async (track: Track, newQueue?: Track[], localUri?: string) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       const q = newQueue ?? [track];
-      const idx = q.findIndex((t) => t.id === track.id);
-      await loadAndPlay(track, q, idx >= 0 ? idx : 0, localUri);
+      const idx = Math.max(0, q.findIndex((t) => t.id === track.id));
+      await loadAndPlay(track, q, idx, localUri);
     },
     [loadAndPlay]
   );
 
   const togglePlayPause = useCallback(async () => {
     if (!soundRef.current) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (isPlaying) {
-      await soundRef.current.pauseAsync();
-    } else {
-      await soundRef.current.playAsync();
-    }
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (isPlaying) await soundRef.current.pauseAsync().catch(() => {});
+    else await soundRef.current.playAsync().catch(() => {});
   }, [isPlaying]);
 
   const playNext = useCallback(async () => {
@@ -177,7 +193,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       else return;
     }
     if (q[nextIdx]) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       await loadAndPlay(q[nextIdx], q, nextIdx);
     }
   }, [loadAndPlay]);
@@ -187,61 +203,40 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const idx = queueIndexRef.current;
     if (!q.length) return;
     if (position > 3000) {
-      await soundRef.current?.setPositionAsync(0);
+      await soundRef.current?.setPositionAsync(0).catch(() => {});
       return;
     }
     const prevIdx = idx > 0 ? idx - 1 : 0;
     if (q[prevIdx]) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       await loadAndPlay(q[prevIdx], q, prevIdx);
     }
   }, [position, loadAndPlay]);
 
   const seekTo = useCallback(async (millis: number) => {
-    await soundRef.current?.setPositionAsync(millis);
+    await soundRef.current?.setPositionAsync(millis).catch(() => {});
   }, []);
 
-  const addToQueue = useCallback((track: Track) => {
-    setQueue((q) => [...q, track]);
-  }, []);
-
-  const clearQueue = useCallback(() => {
-    setQueue([]);
-    setQueueIndex(0);
-  }, []);
+  const addToQueue = useCallback((track: Track) => { setQueue((q) => [...q, track]); }, []);
+  const clearQueue = useCallback(() => { setQueue([]); setQueueIndex(0); }, []);
 
   const toggleShuffle = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setIsShuffled((v) => !v);
   }, []);
 
   const cycleRepeat = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setRepeatMode((m) => (m === "none" ? "all" : m === "all" ? "one" : "none"));
   }, []);
 
   return (
     <PlayerContext.Provider
       value={{
-        currentTrack,
-        queue,
-        isPlaying,
-        position,
-        duration,
-        isLoading,
-        playTrack,
-        togglePlayPause,
-        playNext,
-        playPrev,
-        seekTo,
-        addToQueue,
-        clearQueue,
-        isShuffled,
-        toggleShuffle,
-        repeatMode,
-        cycleRepeat,
-        recentlyPlayed,
-        setLocalUriResolver,
+        currentTrack, queue, isPlaying, position, duration, isLoading,
+        playbackError, playTrack, togglePlayPause, playNext, playPrev,
+        seekTo, addToQueue, clearQueue, isShuffled, toggleShuffle,
+        repeatMode, cycleRepeat, recentlyPlayed, setLocalUriResolver,
       }}
     >
       {children}

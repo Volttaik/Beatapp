@@ -17,6 +17,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AppearanceProvider } from "@/contexts/AppearanceContext";
 import { DownloadProvider } from "@/contexts/DownloadContext";
 import { LibraryProvider } from "@/contexts/LibraryContext";
 import { PlayerProvider } from "@/contexts/PlayerContext";
@@ -38,41 +39,17 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="player"
-        options={{
-          presentation: "modal",
-          headerShown: false,
-          animation: "slide_from_bottom",
-        }}
+        options={{ presentation: "modal", headerShown: false, animation: "slide_from_bottom" }}
       />
       <Stack.Screen
         name="queue"
-        options={{
-          presentation: "modal",
-          headerShown: false,
-          animation: "slide_from_bottom",
-        }}
+        options={{ presentation: "modal", headerShown: false, animation: "slide_from_bottom" }}
       />
-      <Stack.Screen
-        name="settings"
-        options={{
-          headerShown: false,
-          animation: "slide_from_right",
-        }}
-      />
-      <Stack.Screen
-        name="playlist/[id]"
-        options={{
-          headerShown: false,
-          animation: "slide_from_right",
-        }}
-      />
+      <Stack.Screen name="settings" options={{ headerShown: false, animation: "slide_from_right" }} />
+      <Stack.Screen name="playlist/[id]" options={{ headerShown: false, animation: "slide_from_right" }} />
       <Stack.Screen
         name="playlist/create"
-        options={{
-          presentation: "modal",
-          headerShown: false,
-          animation: "slide_from_bottom",
-        }}
+        options={{ presentation: "modal", headerShown: false, animation: "slide_from_bottom" }}
       />
     </Stack>
   );
@@ -80,17 +57,17 @@ function RootLayoutNav() {
 
 function AppProviders({ children }: { children: React.ReactNode }) {
   return (
-    <StatsProvider>
-      <PlayerProvider>
-        <LibraryProvider>
-          <PlaylistProvider>
-            <DownloadProvider>
-              {children}
-            </DownloadProvider>
-          </PlaylistProvider>
-        </LibraryProvider>
-      </PlayerProvider>
-    </StatsProvider>
+    <AppearanceProvider>
+      <StatsProvider>
+        <PlayerProvider>
+          <LibraryProvider>
+            <PlaylistProvider>
+              <DownloadProvider>{children}</DownloadProvider>
+            </PlaylistProvider>
+          </LibraryProvider>
+        </PlayerProvider>
+      </StatsProvider>
+    </AppearanceProvider>
   );
 }
 
@@ -103,15 +80,13 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
+    if (fontsLoaded || fontError) SplashScreen.hideAsync();
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) {
     return (
       <SafeAreaProvider>
-        <View style={{ flex: 1, backgroundColor: "#08080F", alignItems: "center", justifyContent: "center" }}>
+        <View style={{ flex: 1, backgroundColor: "#02040C", alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator size="large" color="#7C3AED" />
         </View>
       </SafeAreaProvider>
@@ -119,7 +94,7 @@ export default function RootLayout() {
   }
 
   const inner = (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#08080F" }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#02040C" }}>
       <KeyboardProvider>
         <AppProviders>
           <RootLayoutNav />
@@ -133,11 +108,7 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           {hasClerk ? (
-            <ClerkProvider
-              publishableKey={publishableKey}
-              tokenCache={tokenCache}
-              proxyUrl={proxyUrl}
-            >
+            <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache} proxyUrl={proxyUrl}>
               <ClerkLoaded>{inner}</ClerkLoaded>
             </ClerkProvider>
           ) : (

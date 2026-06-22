@@ -1,5 +1,3 @@
-import { Platform } from "react-native";
-
 export interface Track {
   id: string;
   title: string;
@@ -24,23 +22,22 @@ export interface JamendoTrack {
   };
 }
 
-const JAMENDO_BASE = "https://api.jamendo.com/v3.0";
-const CLIENT_ID = "b6747d04";
-
 function getBaseUrl(): string {
   const domain = process.env.EXPO_PUBLIC_DOMAIN;
-  return domain ? `https://${domain}` : "";
+  if (!domain) return "";
+  return `https://${domain}`;
 }
 
-export function mapJamendoTrack(t: JamendoTrack): Track {
+export function mapJamendoTrack(t: JamendoTrack): Track | null {
+  if (!t?.id || !t?.audio) return null;
   return {
-    id: t.id,
-    title: t.name,
-    artist: t.artist_name,
-    album: t.album_name,
-    artwork: t.album_image,
-    audioUrl: t.audio.replace("http://", "https://"),
-    duration: t.duration,
+    id: String(t.id),
+    title: t.name ?? "Unknown",
+    artist: t.artist_name ?? "Unknown Artist",
+    album: t.album_name ?? "",
+    artwork: t.album_image ?? "",
+    audioUrl: (t.audio ?? "").replace("http://", "https://"),
+    duration: Number(t.duration) || 0,
     genre: t.musicinfo?.tags?.genres?.[0],
   };
 }
@@ -48,26 +45,33 @@ export function mapJamendoTrack(t: JamendoTrack): Track {
 export async function fetchJamendoTracks(
   params: Record<string, string> = {}
 ): Promise<Track[]> {
-  const queryParams: Record<string, string> = {
-    format: "json",
-    limit: "20",
-    audioformat: "mp32",
-    include: "musicinfo",
-    ...params,
-  };
-
-  const query = new URLSearchParams(queryParams);
   const baseUrl = getBaseUrl();
-  const url = baseUrl
-    ? `${baseUrl}/api/jamendo/tracks?${query}`
-    : `${JAMENDO_BASE}/tracks/?${new URLSearchParams({ client_id: CLIENT_ID, ...queryParams })}`;
+
+  let url: string;
+  if (baseUrl) {
+    const q = new URLSearchParams({
+      limit: "20",
+      ...params,
+    });
+    url = `${baseUrl}/api/jamendo/tracks?${q}`;
+  } else {
+    const q = new URLSearchParams({
+      client_id: "b6747d04",
+      format: "json",
+      limit: "20",
+      ...params,
+    });
+    url = `https://api.jamendo.com/v3.0/tracks/?${q}`;
+  }
 
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) return [];
     const data = await res.json();
-    if (!data.results || !Array.isArray(data.results)) return [];
-    return (data.results as JamendoTrack[]).map(mapJamendoTrack);
+    if (!Array.isArray(data?.results)) return [];
+    return (data.results as JamendoTrack[])
+      .map(mapJamendoTrack)
+      .filter((t): t is Track => t !== null);
   } catch {
     return [];
   }
@@ -93,7 +97,8 @@ export const FEATURED_GENRES = [
 ];
 
 export function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  const s = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
 }

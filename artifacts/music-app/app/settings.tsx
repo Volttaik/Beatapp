@@ -1,11 +1,11 @@
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,6 +15,8 @@ import {
 } from "react-native";
 
 import GlassCard from "@/components/GlassCard";
+import GlassIcon from "@/components/GlassIcon";
+import ScreenBackground from "@/components/ScreenBackground";
 
 const SETTINGS_KEY = "beatstream_settings";
 
@@ -44,7 +46,7 @@ function SettingRow({
   danger,
   showChevron,
 }: {
-  icon: string;
+  icon: React.ComponentProps<typeof Feather>["name"];
   label: string;
   subtitle?: string;
   value?: boolean;
@@ -59,22 +61,28 @@ function SettingRow({
       onPress={onPress}
       disabled={!onPress && !onToggle}
     >
-      <View style={[styles.iconBox, { backgroundColor: danger ? "rgba(239,68,68,0.15)" : "rgba(124,58,237,0.15)" }]}>
-        <Feather name={icon as any} size={18} color={danger ? "#EF4444" : "#A78BFA"} />
-      </View>
+      <GlassIcon
+        name={icon}
+        size={16}
+        containerSize={36}
+        borderRadius={11}
+        active={danger}
+        color={danger ? "rgba(239,68,68,0.9)" : "rgba(255,255,255,0.75)"}
+      />
       <View style={styles.settingInfo}>
-        <Text style={[styles.settingLabel, { color: danger ? "#EF4444" : "#fff" }]}>{label}</Text>
+        <Text style={[styles.settingLabel, danger && { color: "#EF4444" }]}>{label}</Text>
         {subtitle ? <Text style={styles.settingSubtitle}>{subtitle}</Text> : null}
       </View>
       {onToggle !== undefined && value !== undefined ? (
         <Switch
           value={value}
           onValueChange={onToggle}
-          trackColor={{ false: "#2A2A3A", true: "#7C3AED" }}
-          thumbColor={value ? "#A78BFA" : "#666680"}
+          trackColor={{ false: "rgba(255,255,255,0.08)", true: "rgba(124,58,237,0.55)" }}
+          thumbColor={value ? "#A78BFA" : "rgba(255,255,255,0.35)"}
+          ios_backgroundColor="rgba(255,255,255,0.08)"
         />
       ) : showChevron ? (
-        <Feather name="chevron-right" size={18} color="rgba(255,255,255,0.3)" />
+        <Feather name="chevron-right" size={16} color="rgba(255,255,255,0.18)" />
       ) : null}
     </Pressable>
   );
@@ -87,6 +95,7 @@ function SectionHeader({ title }: { title: string }) {
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const topPad = Platform.OS === "web" ? 60 : insets.top;
 
   useEffect(() => {
     AsyncStorage.getItem(SETTINGS_KEY).then((data) => {
@@ -129,28 +138,19 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={["#1A0840", "#08080F"]}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 0.4 }}
-      />
-
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Feather name="arrow-left" size={24} color="#fff" />
-        </Pressable>
+    <ScreenBackground>
+      <View style={[styles.header, { paddingTop: topPad + 16 }]}>
+        <GlassIcon name="arrow-left" size={20} containerSize={42} onPress={() => router.back()} />
         <Text style={styles.title}>Settings</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 42 }} />
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 140 }]}
         showsVerticalScrollIndicator={false}
       >
         <SectionHeader title="AUDIO" />
-        <GlassCard style={styles.card} intensity={30}>
+        <GlassCard style={styles.card} intensity={60} shine>
           <SettingRow
             icon="zap"
             label="High Quality Streaming"
@@ -182,7 +182,7 @@ export default function SettingsScreen() {
         </GlassCard>
 
         <SectionHeader title="NOTIFICATIONS" />
-        <GlassCard style={styles.card} intensity={30}>
+        <GlassCard style={styles.card} intensity={60} shine>
           <SettingRow
             icon="bell"
             label="Push Notifications"
@@ -193,7 +193,7 @@ export default function SettingsScreen() {
         </GlassCard>
 
         <SectionHeader title="PRIVACY" />
-        <GlassCard style={styles.card} intensity={30}>
+        <GlassCard style={styles.card} intensity={60} shine>
           <SettingRow
             icon="clock"
             label="Clear Listening History"
@@ -211,12 +211,11 @@ export default function SettingsScreen() {
         </GlassCard>
 
         <SectionHeader title="ABOUT" />
-        <GlassCard style={styles.card} intensity={30}>
+        <GlassCard style={styles.card} intensity={60} shine>
           <SettingRow
             icon="info"
             label="Version"
-            subtitle="Beatstream 1.0.0"
-            showChevron={false}
+            subtitle="BeatStream 1.0.0"
           />
           <SettingRow
             icon="shield"
@@ -238,56 +237,53 @@ export default function SettingsScreen() {
           />
         </GlassCard>
       </ScrollView>
-    </View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#08080F" },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   title: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#fff" },
-  content: { paddingHorizontal: 16, paddingTop: 8 },
+  content: { paddingHorizontal: 16, paddingTop: 4 },
   sectionHeader: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
-    color: "rgba(255,255,255,0.4)",
+    color: "rgba(255,255,255,0.35)",
     letterSpacing: 1.2,
     marginTop: 24,
-    marginBottom: 8,
+    marginBottom: 10,
     paddingHorizontal: 4,
   },
-  card: { borderRadius: 16, overflow: "hidden" },
+  card: {
+    borderRadius: 18,
+    overflow: "hidden",
+    paddingHorizontal: 14,
+    paddingBottom: 4,
+  },
   settingRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 13,
     gap: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.07)",
-  },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
   settingInfo: { flex: 1 },
   settingLabel: {
     fontSize: 15,
     fontFamily: "Inter_500Medium",
+    color: "#fff",
   },
   settingSubtitle: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.4)",
+    color: "rgba(255,255,255,0.38)",
     marginTop: 2,
   },
 });
