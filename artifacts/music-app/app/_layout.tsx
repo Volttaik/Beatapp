@@ -20,6 +20,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppearanceProvider } from "@/contexts/AppearanceContext";
 import { DownloadProvider } from "@/contexts/DownloadContext";
 import { LibraryProvider } from "@/contexts/LibraryContext";
+import { LocalAuthProvider } from "@/contexts/LocalAuthContext";
 import { PlayerProvider } from "@/contexts/PlayerContext";
 import { PlaylistProvider } from "@/contexts/PlaylistContext";
 import { StatsProvider } from "@/contexts/StatsContext";
@@ -113,13 +114,15 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          {hasClerk ? (
-            <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache} proxyUrl={proxyUrl}>
-              <ClerkLoaded>{inner}</ClerkLoaded>
-            </ClerkProvider>
-          ) : (
-            inner
-          )}
+          <LocalAuthProvider>
+            {hasClerk ? (
+              <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache} proxyUrl={proxyUrl}>
+                <ClerkLoaded>{inner}</ClerkLoaded>
+              </ClerkProvider>
+            ) : (
+              inner
+            )}
+          </LocalAuthProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>

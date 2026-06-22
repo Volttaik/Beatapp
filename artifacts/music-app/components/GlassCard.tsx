@@ -60,9 +60,37 @@ export default function GlassCard({
 
   if (Platform.OS === "web") {
     return (
-      <View style={[styles.webGlass, { borderRadius: radius }, style]}>
+      <View
+        style={[
+          styles.webOuter,
+          {
+            borderRadius: radius,
+            borderTopColor: "rgba(255,255,255,0.26)",
+            borderLeftColor: "rgba(255,255,255,0.14)",
+            borderRightColor: "rgba(255,255,255,0.06)",
+            borderBottomColor: "rgba(255,255,255,0.04)",
+          },
+          style,
+        ]}
+      >
+        {/* Blur layer — absolutely positioned so overflow:hidden on parent doesn't block it */}
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backdropFilter: "blur(28px) saturate(180%)",
+              WebkitBackdropFilter: "blur(28px) saturate(180%)",
+            } as any,
+          ]}
+          pointerEvents="none"
+        />
+        {/* Dark tint */}
+        <View
+          style={[StyleSheet.absoluteFill, styles.webTint]}
+          pointerEvents="none"
+        />
         {shineLayer}
-        {children}
+        <View style={contentStyle}>{children}</View>
       </View>
     );
   }
@@ -97,17 +125,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(5,5,12,0.52)",
   },
-  webGlass: {
+  webOuter: {
+    overflow: "hidden",
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.26)",
-    borderLeftColor: "rgba(255,255,255,0.14)",
-    borderRightColor: "rgba(255,255,255,0.06)",
-    borderBottomColor: "rgba(255,255,255,0.04)",
-    backgroundColor: "rgba(8,8,16,0.65)",
-    backdropFilter: "blur(20px) saturate(150%)" as any,
-    overflow: "hidden",
+    position: "relative",
   } as any,
+  webTint: {
+    backgroundColor: "rgba(5,5,15,0.42)",
+  },
 });

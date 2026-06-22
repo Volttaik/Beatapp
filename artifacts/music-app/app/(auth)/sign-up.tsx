@@ -1,10 +1,8 @@
-import { useAuth, useSignUp } from "@clerk/expo";
 import { Link, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
@@ -17,8 +15,11 @@ import {
 } from "react-native";
 
 import GlassCard from "@/components/GlassCard";
+import { useLocalAuth } from "@/contexts/LocalAuthContext";
 
 const earthBg = require("@/assets/images/earth-bg.jpg");
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+const hasClerk = publishableKey.startsWith("pk_");
 
 function GlassInput({
   placeholder,
@@ -79,7 +80,123 @@ const inp = StyleSheet.create({
   right: { marginLeft: 8 },
 });
 
-export default function SignUpScreen() {
+function SignUpShell({ children }: { children: React.ReactNode }) {
+  return (
+    <View style={st.screen}>
+      <ImageBackground source={earthBg} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      <View style={st.overlay} />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <ScrollView contentContainerStyle={st.scroll} keyboardShouldPersistTaps="handled">
+          <View style={st.cardConstrained}>
+            <View style={st.logoWrap}>
+              <Text style={st.appName}>BeatStream</Text>
+              <Text style={st.tagline}>Your music, everywhere</Text>
+            </View>
+            {children}
+          </View>
+          <View nativeID="clerk-captcha" />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
+
+function SignUpLocal() {
+  const { signUp } = useLocalAuth();
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSignUp = async () => {
+    if (!name || !email || !password) return;
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      await signUp(name, email, password);
+      router.replace("/(tabs)");
+    } catch (e: any) {
+      setError(e.message ?? "Sign up failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <SignUpShell>
+      <GlassCard style={st.card} intensity={75} shine>
+        <Text style={st.title}>Create account</Text>
+        <Text style={st.subtitle}>Join BeatStream for free</Text>
+
+        <Text style={st.label}>Name</Text>
+        <GlassInput
+          placeholder="Your name"
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+          autoComplete="name"
+        />
+
+        <Text style={st.label}>Email</Text>
+        <GlassInput
+          placeholder="you@example.com"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoComplete="email"
+        />
+
+        <Text style={st.label}>Password</Text>
+        <GlassInput
+          placeholder="Min. 8 characters"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+          autoComplete="new-password"
+          right={
+            <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+              <Text style={st.link}>{showPassword ? "Hide" : "Show"}</Text>
+            </Pressable>
+          }
+        />
+
+        {error ? <Text style={st.error}>{error}</Text> : null}
+
+        <Pressable
+          style={[st.btn, (!name || !email || !password || loading) && { opacity: 0.45 }]}
+          onPress={handleSignUp}
+          disabled={!name || !email || !password || loading}
+        >
+          <LinearGradient
+            colors={["rgba(124,58,237,0.55)", "rgba(109,40,217,0.40)"]}
+            style={StyleSheet.absoluteFill}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+          <View style={st.btnBorder} />
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={st.btnText}>Create Account</Text>}
+        </Pressable>
+
+        <View style={st.footer}>
+          <Text style={st.footerText}>Already have an account? </Text>
+          <Link href="/(auth)/sign-in" asChild>
+            <Pressable><Text style={st.link}>Sign in</Text></Pressable>
+          </Link>
+        </View>
+      </GlassCard>
+    </SignUpShell>
+  );
+}
+
+function SignUpWithClerk() {
+  const { useAuth, useSignUp } = require("@clerk/expo");
   const { signUp, errors, fetchStatus } = useSignUp();
   const { isSignedIn } = useAuth();
   const router = useRouter();
@@ -121,28 +238,16 @@ export default function SignUpScreen() {
           <GlassCard style={[st.card, st.cardConstrained]} intensity={75} shine>
             <Text style={st.title}>Check your email</Text>
             <Text style={st.subtitle}>We sent a 6-digit code to {email}</Text>
-            <GlassInput
-              placeholder="000000"
-              value={code}
-              onChangeText={setCode}
-              keyboardType="numeric"
-            />
+            <GlassInput placeholder="000000" value={code} onChangeText={setCode} keyboardType="numeric" />
             {errors.fields.code && <Text style={st.error}>{errors.fields.code.message}</Text>}
             <Pressable
               style={[st.btn, (!code || fetchStatus === "fetching") && { opacity: 0.45 }]}
               onPress={handleVerify}
               disabled={!code || fetchStatus === "fetching"}
             >
-              <LinearGradient
-                colors={["rgba(124,58,237,0.55)", "rgba(109,40,217,0.40)"]}
-                style={StyleSheet.absoluteFill}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              />
+              <LinearGradient colors={["rgba(124,58,237,0.55)", "rgba(109,40,217,0.40)"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
               <View style={st.btnBorder} />
-              {fetchStatus === "fetching"
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={st.btnText}>Verify Email</Text>}
+              {fetchStatus === "fetching" ? <ActivityIndicator color="#fff" /> : <Text style={st.btnText}>Verify Email</Text>}
             </Pressable>
             <Pressable onPress={() => signUp.verifications.sendEmailCode()} style={st.linkRow}>
               <Text style={st.link}>Resend code</Text>
@@ -154,85 +259,50 @@ export default function SignUpScreen() {
   }
 
   return (
-    <View style={st.screen}>
-      <ImageBackground source={earthBg} style={StyleSheet.absoluteFill} resizeMode="cover" />
-      <View style={st.overlay} />
-
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-        <ScrollView contentContainerStyle={st.scroll} keyboardShouldPersistTaps="handled">
-          <View style={st.cardConstrained}>
-            <View style={st.logoWrap}>
-              <GlassCard style={st.logoBg} intensity={60} shine>
-                <Image
-                  source={require("@/assets/images/beatstream-logo.png")}
-                  style={st.logo}
-                  resizeMode="contain"
-                />
-              </GlassCard>
-              <Text style={st.appName}>BeatStream</Text>
-              <Text style={st.tagline}>Your music, everywhere</Text>
-            </View>
-
-            <GlassCard style={st.card} intensity={75} shine>
-              <Text style={st.title}>Create account</Text>
-              <Text style={st.subtitle}>Join BeatStream for free</Text>
-
-              <Text style={st.label}>Email</Text>
-              <GlassInput
-                placeholder="you@example.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoComplete="email"
-              />
-              {errors.fields.emailAddress && <Text style={st.error}>{errors.fields.emailAddress.message}</Text>}
-
-              <Text style={st.label}>Password</Text>
-              <GlassInput
-                placeholder="Min. 8 characters"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoComplete="new-password"
-                right={
-                  <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
-                    <Text style={st.link}>{showPassword ? "Hide" : "Show"}</Text>
-                  </Pressable>
-                }
-              />
-              {errors.fields.password && <Text style={st.error}>{errors.fields.password.message}</Text>}
-
-              <Pressable
-                style={[st.btn, (!email || !password || fetchStatus === "fetching") && { opacity: 0.45 }]}
-                onPress={handleSignUp}
-                disabled={!email || !password || fetchStatus === "fetching"}
-              >
-                <LinearGradient
-                  colors={["rgba(124,58,237,0.55)", "rgba(109,40,217,0.40)"]}
-                  style={StyleSheet.absoluteFill}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                />
-                <View style={st.btnBorder} />
-                {fetchStatus === "fetching"
-                  ? <ActivityIndicator color="#fff" />
-                  : <Text style={st.btnText}>Create Account</Text>}
-              </Pressable>
-
-              <View style={st.footer}>
-                <Text style={st.footerText}>Already have an account? </Text>
-                <Link href="/(auth)/sign-in" asChild>
-                  <Pressable><Text style={st.link}>Sign in</Text></Pressable>
-                </Link>
-              </View>
-            </GlassCard>
-          </View>
-
-          <View nativeID="clerk-captcha" />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+    <SignUpShell>
+      <GlassCard style={st.card} intensity={75} shine>
+        <Text style={st.title}>Create account</Text>
+        <Text style={st.subtitle}>Join BeatStream for free</Text>
+        <Text style={st.label}>Email</Text>
+        <GlassInput placeholder="you@example.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
+        {errors.fields.emailAddress && <Text style={st.error}>{errors.fields.emailAddress.message}</Text>}
+        <Text style={st.label}>Password</Text>
+        <GlassInput
+          placeholder="Min. 8 characters"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+          autoComplete="new-password"
+          right={
+            <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+              <Text style={st.link}>{showPassword ? "Hide" : "Show"}</Text>
+            </Pressable>
+          }
+        />
+        {errors.fields.password && <Text style={st.error}>{errors.fields.password.message}</Text>}
+        <Pressable
+          style={[st.btn, (!email || !password || fetchStatus === "fetching") && { opacity: 0.45 }]}
+          onPress={handleSignUp}
+          disabled={!email || !password || fetchStatus === "fetching"}
+        >
+          <LinearGradient colors={["rgba(124,58,237,0.55)", "rgba(109,40,217,0.40)"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+          <View style={st.btnBorder} />
+          {fetchStatus === "fetching" ? <ActivityIndicator color="#fff" /> : <Text style={st.btnText}>Create Account</Text>}
+        </Pressable>
+        <View style={st.footer}>
+          <Text style={st.footerText}>Already have an account? </Text>
+          <Link href="/(auth)/sign-in" asChild>
+            <Pressable><Text style={st.link}>Sign in</Text></Pressable>
+          </Link>
+        </View>
+      </GlassCard>
+    </SignUpShell>
   );
+}
+
+export default function SignUpScreen() {
+  if (hasClerk) return <SignUpWithClerk />;
+  return <SignUpLocal />;
 }
 
 const st = StyleSheet.create({
@@ -242,16 +312,6 @@ const st = StyleSheet.create({
   scroll: { flexGrow: 1, justifyContent: "center", padding: 24, paddingBottom: 40, alignItems: "center" },
   cardConstrained: { width: "100%", maxWidth: 420 },
   logoWrap: { alignItems: "center", marginBottom: 28 },
-  logoBg: {
-    width: 80,
-    height: 80,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 14,
-    overflow: "hidden",
-  },
-  logo: { width: 58, height: 58 },
   appName: { color: "#fff", fontSize: 26, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
   tagline: { color: "rgba(255,255,255,0.4)", fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 4 },
   card: { borderRadius: 24, padding: 24, overflow: "hidden" },
