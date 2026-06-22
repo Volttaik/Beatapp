@@ -1,0 +1,26 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "oZkmKlRxvCITs5WGPI-2P"
+uri = "file://artifacts/music-app/assets/images/icon.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "REHP0bcAX8IpnSLiFUk_v"
+uri = "file://artifacts/music-app/assets/images/album1.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "rE65dGx59-kllL8afuivx"
+uri = "file://artifacts/music-app/assets/images/album2.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "YpZLHXbSTeJ6BG26nMycm"
+uri = "file://artifacts/music-app/assets/images/album3.png"
+type = "image"
+title = "generated_image"
