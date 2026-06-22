@@ -1,9 +1,9 @@
 import { Link, useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
+import { Image } from "expo-image";
+import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,14 +14,13 @@ import {
   View,
 } from "react-native";
 
-import GlassCard from "@/components/GlassCard";
 import { useLocalAuth } from "@/contexts/LocalAuthContext";
 
-const earthBg = require("@/assets/images/earth-bg.jpg");
+const logoImg = require("@/assets/images/beatstream-logo.png");
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
 const hasClerk = publishableKey.startsWith("pk_");
 
-function GlassInput({
+function SpotifyInput({
   placeholder,
   value,
   onChangeText,
@@ -45,7 +44,7 @@ function GlassInput({
       <TextInput
         style={inp.text}
         placeholder={placeholder}
-        placeholderTextColor="rgba(255,255,255,0.22)"
+        placeholderTextColor="#535353"
         value={value}
         onChangeText={onChangeText}
         secureTextEntry={secureTextEntry}
@@ -61,36 +60,35 @@ function GlassInput({
 
 const inp = StyleSheet.create({
   wrapper: {
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "#282828",
+    borderRadius: 4,
     marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: Platform.OS === "web" ? 16 : 14,
   },
   text: {
     flex: 1,
-    color: "#fff",
+    color: "#FFFFFF",
     fontSize: 15,
     fontFamily: "Inter_400Regular",
     padding: 0,
-  },
+    outlineStyle: "none",
+  } as any,
   right: { marginLeft: 8 },
 });
 
 function SignUpShell({ children }: { children: React.ReactNode }) {
   return (
     <View style={st.screen}>
-      <ImageBackground source={earthBg} style={StyleSheet.absoluteFill} resizeMode="cover" />
-      <View style={st.overlay} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView contentContainerStyle={st.scroll} keyboardShouldPersistTaps="handled">
-          <View style={st.cardConstrained}>
+          <View style={st.constrained}>
             <View style={st.logoWrap}>
+              <Image source={logoImg} style={st.logoImg} contentFit="contain" />
               <Text style={st.appName}>BeatStream</Text>
-              <Text style={st.tagline}>Your music, everywhere</Text>
+              <Text style={st.tagline}>Free music, everywhere</Text>
             </View>
             {children}
           </View>
@@ -113,17 +111,14 @@ function SignUpLocal() {
 
   const handleSignUp = async () => {
     if (!name || !email || !password) return;
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
+    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
     setLoading(true);
     setError("");
     try {
       await signUp(name, email, password);
       router.replace("/(tabs)");
     } catch (e: any) {
-      setError(e.message ?? "Sign up failed. Please try again.");
+      setError(e.message ?? "Sign up failed.");
     } finally {
       setLoading(false);
     }
@@ -131,66 +126,50 @@ function SignUpLocal() {
 
   return (
     <SignUpShell>
-      <GlassCard style={st.card} intensity={75} shine>
-        <Text style={st.title}>Create account</Text>
-        <Text style={st.subtitle}>Join BeatStream for free</Text>
+      <Text style={st.formTitle}>Create account</Text>
 
-        <Text style={st.label}>Name</Text>
-        <GlassInput
-          placeholder="Your name"
-          value={name}
-          onChangeText={setName}
-          autoCapitalize="words"
-          autoComplete="name"
-        />
+      <Text style={st.label}>What should we call you?</Text>
+      <SpotifyInput placeholder="Your name" value={name} onChangeText={setName} autoCapitalize="words" autoComplete="name" />
 
-        <Text style={st.label}>Email</Text>
-        <GlassInput
-          placeholder="you@example.com"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoComplete="email"
-        />
+      <Text style={st.label}>Email</Text>
+      <SpotifyInput placeholder="Email address" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
 
-        <Text style={st.label}>Password</Text>
-        <GlassInput
-          placeholder="Min. 8 characters"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          autoComplete="new-password"
-          right={
-            <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
-              <Text style={st.link}>{showPassword ? "Hide" : "Show"}</Text>
-            </Pressable>
-          }
-        />
+      <Text style={st.label}>Password</Text>
+      <SpotifyInput
+        placeholder="Create a password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry={!showPassword}
+        autoComplete="new-password"
+        right={
+          <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+            <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#B3B3B3" />
+          </Pressable>
+        }
+      />
 
-        {error ? <Text style={st.error}>{error}</Text> : null}
+      {error ? <Text style={st.error}>{error}</Text> : null}
 
-        <Pressable
-          style={[st.btn, (!name || !email || !password || loading) && { opacity: 0.45 }]}
-          onPress={handleSignUp}
-          disabled={!name || !email || !password || loading}
-        >
-          <LinearGradient
-            colors={["rgba(124,58,237,0.55)", "rgba(109,40,217,0.40)"]}
-            style={StyleSheet.absoluteFill}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          />
-          <View style={st.btnBorder} />
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={st.btnText}>Create Account</Text>}
-        </Pressable>
+      <Pressable
+        style={[st.btn, (!name || !email || !password || loading) && { opacity: 0.45 }]}
+        onPress={handleSignUp}
+        disabled={!name || !email || !password || loading}
+      >
+        {loading ? <ActivityIndicator color="#000" /> : <Text style={st.btnText}>Sign Up Free</Text>}
+      </Pressable>
 
-        <View style={st.footer}>
-          <Text style={st.footerText}>Already have an account? </Text>
-          <Link href="/(auth)/sign-in" asChild>
-            <Pressable><Text style={st.link}>Sign in</Text></Pressable>
-          </Link>
-        </View>
-      </GlassCard>
+      <View style={st.divider}>
+        <View style={st.dividerLine} />
+        <Text style={st.dividerText}>or</Text>
+        <View style={st.dividerLine} />
+      </View>
+
+      <View style={st.footer}>
+        <Text style={st.footerText}>Already have an account? </Text>
+        <Link href="/(auth)/sign-in" asChild>
+          <Pressable><Text style={st.link}>Log in</Text></Pressable>
+        </Link>
+      </View>
     </SignUpShell>
   );
 }
@@ -215,7 +194,7 @@ function SignUpWithClerk() {
     await signUp.verifications.verifyEmailCode({ code });
     if (signUp.status === "complete") {
       await signUp.finalize({
-        navigate: ({ session, decorateUrl }: { session: any; decorateUrl: any }) => {
+        navigate: ({ session, decorateUrl }: any) => {
           if (session?.currentTask) return;
           router.replace("/(tabs)" as any);
         },
@@ -225,77 +204,53 @@ function SignUpWithClerk() {
 
   if (signUp.status === "complete" || isSignedIn) return null;
 
-  if (
-    signUp.status === "missing_requirements" &&
-    signUp.unverifiedFields.includes("email_address") &&
-    signUp.missingFields.length === 0
-  ) {
+  if (signUp.status === "missing_requirements" && signUp.unverifiedFields.includes("email_address") && signUp.missingFields.length === 0) {
     return (
-      <View style={st.screen}>
-        <ImageBackground source={earthBg} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        <View style={st.overlay} />
-        <View style={st.centered}>
-          <GlassCard style={[st.card, st.cardConstrained]} intensity={75} shine>
-            <Text style={st.title}>Check your email</Text>
-            <Text style={st.subtitle}>We sent a 6-digit code to {email}</Text>
-            <GlassInput placeholder="000000" value={code} onChangeText={setCode} keyboardType="numeric" />
-            {errors.fields.code && <Text style={st.error}>{errors.fields.code.message}</Text>}
-            <Pressable
-              style={[st.btn, (!code || fetchStatus === "fetching") && { opacity: 0.45 }]}
-              onPress={handleVerify}
-              disabled={!code || fetchStatus === "fetching"}
-            >
-              <LinearGradient colors={["rgba(124,58,237,0.55)", "rgba(109,40,217,0.40)"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-              <View style={st.btnBorder} />
-              {fetchStatus === "fetching" ? <ActivityIndicator color="#fff" /> : <Text style={st.btnText}>Verify Email</Text>}
-            </Pressable>
-            <Pressable onPress={() => signUp.verifications.sendEmailCode()} style={st.linkRow}>
-              <Text style={st.link}>Resend code</Text>
-            </Pressable>
-          </GlassCard>
-        </View>
-      </View>
+      <SignUpShell>
+        <Text style={st.formTitle}>Check your email</Text>
+        <Text style={st.subtitle}>We sent a 6-digit code to {email}</Text>
+        <SpotifyInput placeholder="000000" value={code} onChangeText={setCode} keyboardType="numeric" />
+        {errors.fields.code && <Text style={st.error}>{errors.fields.code.message}</Text>}
+        <Pressable style={[st.btn, (!code || fetchStatus === "fetching") && { opacity: 0.45 }]} onPress={handleVerify} disabled={!code || fetchStatus === "fetching"}>
+          {fetchStatus === "fetching" ? <ActivityIndicator color="#000" /> : <Text style={st.btnText}>Verify Email</Text>}
+        </Pressable>
+        <Pressable onPress={() => signUp.verifications.sendEmailCode()} style={st.linkRow}>
+          <Text style={st.link}>Resend code</Text>
+        </Pressable>
+      </SignUpShell>
     );
   }
 
   return (
     <SignUpShell>
-      <GlassCard style={st.card} intensity={75} shine>
-        <Text style={st.title}>Create account</Text>
-        <Text style={st.subtitle}>Join BeatStream for free</Text>
-        <Text style={st.label}>Email</Text>
-        <GlassInput placeholder="you@example.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
-        {errors.fields.emailAddress && <Text style={st.error}>{errors.fields.emailAddress.message}</Text>}
-        <Text style={st.label}>Password</Text>
-        <GlassInput
-          placeholder="Min. 8 characters"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          autoComplete="new-password"
-          right={
-            <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
-              <Text style={st.link}>{showPassword ? "Hide" : "Show"}</Text>
-            </Pressable>
-          }
-        />
-        {errors.fields.password && <Text style={st.error}>{errors.fields.password.message}</Text>}
-        <Pressable
-          style={[st.btn, (!email || !password || fetchStatus === "fetching") && { opacity: 0.45 }]}
-          onPress={handleSignUp}
-          disabled={!email || !password || fetchStatus === "fetching"}
-        >
-          <LinearGradient colors={["rgba(124,58,237,0.55)", "rgba(109,40,217,0.40)"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-          <View style={st.btnBorder} />
-          {fetchStatus === "fetching" ? <ActivityIndicator color="#fff" /> : <Text style={st.btnText}>Create Account</Text>}
-        </Pressable>
-        <View style={st.footer}>
-          <Text style={st.footerText}>Already have an account? </Text>
-          <Link href="/(auth)/sign-in" asChild>
-            <Pressable><Text style={st.link}>Sign in</Text></Pressable>
-          </Link>
-        </View>
-      </GlassCard>
+      <Text style={st.formTitle}>Create account</Text>
+      <Text style={st.label}>Email</Text>
+      <SpotifyInput placeholder="Email address" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
+      {errors.fields.emailAddress && <Text style={st.error}>{errors.fields.emailAddress.message}</Text>}
+      <Text style={st.label}>Password</Text>
+      <SpotifyInput
+        placeholder="Create a password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry={!showPassword}
+        autoComplete="new-password"
+        right={
+          <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+            <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#B3B3B3" />
+          </Pressable>
+        }
+      />
+      {errors.fields.password && <Text style={st.error}>{errors.fields.password.message}</Text>}
+      <Pressable style={[st.btn, (!email || !password || fetchStatus === "fetching") && { opacity: 0.45 }]} onPress={handleSignUp} disabled={!email || !password || fetchStatus === "fetching"}>
+        {fetchStatus === "fetching" ? <ActivityIndicator color="#000" /> : <Text style={st.btnText}>Sign Up Free</Text>}
+      </Pressable>
+      <View style={st.divider}><View style={st.dividerLine} /><Text style={st.dividerText}>or</Text><View style={st.dividerLine} /></View>
+      <View style={st.footer}>
+        <Text style={st.footerText}>Already have an account? </Text>
+        <Link href="/(auth)/sign-in" asChild>
+          <Pressable><Text style={st.link}>Log in</Text></Pressable>
+        </Link>
+      </View>
     </SignUpShell>
   );
 }
@@ -306,47 +261,38 @@ export default function SignUpScreen() {
 }
 
 const st = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#02040C" },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(2,4,12,0.75)" },
-  centered: { flex: 1, justifyContent: "center", padding: 24, alignItems: "center" },
-  scroll: { flexGrow: 1, justifyContent: "center", padding: 24, paddingBottom: 40, alignItems: "center" },
-  cardConstrained: { width: "100%", maxWidth: 420 },
-  logoWrap: { alignItems: "center", marginBottom: 28 },
-  appName: { color: "#fff", fontSize: 26, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
-  tagline: { color: "rgba(255,255,255,0.4)", fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 4 },
-  card: { borderRadius: 24, padding: 24, overflow: "hidden" },
-  title: { color: "#fff", fontSize: 24, fontFamily: "Inter_700Bold", marginBottom: 5 },
-  subtitle: { color: "rgba(255,255,255,0.45)", fontSize: 14, fontFamily: "Inter_400Regular", marginBottom: 20 },
+  screen: { flex: 1, backgroundColor: "#121212" },
+  scroll: { flexGrow: 1, justifyContent: "center", padding: 32, paddingBottom: 48 },
+  constrained: { width: "100%", maxWidth: 400, alignSelf: "center" },
+  logoWrap: { alignItems: "center", marginBottom: 40 },
+  logoImg: { width: 72, height: 72, marginBottom: 16 },
+  appName: { color: "#FFFFFF", fontSize: 28, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
+  tagline: { color: "#B3B3B3", fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 6 },
+  formTitle: { color: "#FFFFFF", fontSize: 24, fontFamily: "Inter_700Bold", marginBottom: 24, textAlign: "center" },
+  subtitle: { color: "#B3B3B3", fontSize: 14, fontFamily: "Inter_400Regular", marginBottom: 20, textAlign: "center" },
   label: {
-    color: "rgba(255,255,255,0.40)",
+    color: "#B3B3B3",
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
-    marginBottom: 5,
+    marginBottom: 6,
     marginTop: 4,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     textTransform: "uppercase",
   },
   btn: {
-    borderRadius: 14,
-    backgroundColor: "rgba(124,58,237,0.15)",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 500,
     paddingVertical: 16,
     alignItems: "center",
-    overflow: "hidden",
-    marginTop: 4,
+    marginTop: 8,
   },
-  btnBorder: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.20)",
-    borderLeftColor: "rgba(255,255,255,0.10)",
-    borderRightColor: "rgba(255,255,255,0.05)",
-    borderBottomColor: "rgba(255,255,255,0.04)",
-  },
-  btnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold" },
-  footer: { flexDirection: "row", justifyContent: "center", marginTop: 20 },
-  footerText: { color: "rgba(255,255,255,0.4)", fontSize: 14, fontFamily: "Inter_400Regular" },
-  link: { color: "#A78BFA", fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  btnText: { color: "#000000", fontSize: 16, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
+  divider: { flexDirection: "row", alignItems: "center", marginVertical: 24, gap: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "#282828" },
+  dividerText: { color: "#B3B3B3", fontSize: 13, fontFamily: "Inter_400Regular" },
+  footer: { flexDirection: "row", justifyContent: "center", flexWrap: "wrap" },
+  footerText: { color: "#B3B3B3", fontSize: 14, fontFamily: "Inter_400Regular" },
+  link: { color: "#FFFFFF", fontSize: 14, fontFamily: "Inter_700Bold", textDecorationLine: "underline" },
   error: { color: "#EF4444", fontSize: 12, fontFamily: "Inter_400Regular", marginBottom: 8 },
-  linkRow: { alignItems: "center", marginTop: 10 },
+  linkRow: { alignItems: "center", marginTop: 12 },
 });

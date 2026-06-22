@@ -12,7 +12,6 @@ import {
 } from "react-native";
 
 import AddToPlaylistModal from "@/components/AddToPlaylistModal";
-import GlassIcon from "@/components/GlassIcon";
 import { useDownloads } from "@/contexts/DownloadContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { usePlayer } from "@/contexts/PlayerContext";
@@ -48,14 +47,13 @@ function DownloadButton({ track }: { track: Track }) {
   }
 
   return (
-    <GlassIcon
-      name={downloaded ? "check-circle" : "download"}
-      size={16}
-      containerSize={32}
-      active={downloaded}
-      color={downloaded ? "#A78BFA" : "rgba(255,255,255,0.35)"}
-      onPress={handlePress}
-    />
+    <Pressable onPress={handlePress} hitSlop={8} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
+      <Feather
+        name={downloaded ? "check-circle" : "download"}
+        size={18}
+        color={downloaded ? "#A78BFA" : "#535353"}
+      />
+    </Pressable>
   );
 }
 
@@ -79,7 +77,7 @@ const TrackCard = memo(function TrackCard({ track, queue, showIndex }: TrackCard
         style={({ pressed }) => [
           styles.container,
           isActive && styles.containerActive,
-          pressed && { opacity: 0.75 },
+          pressed && { opacity: 0.7 },
         ]}
         onPress={handlePress}
         onLongPress={handleLongPress}
@@ -99,10 +97,7 @@ const TrackCard = memo(function TrackCard({ track, queue, showIndex }: TrackCard
             )}
           </View>
           <View style={styles.info}>
-            <Text
-              style={[styles.title, isActive && { color: "#A78BFA" }]}
-              numberOfLines={1}
-            >
+            <Text style={[styles.title, isActive && { color: "#A78BFA" }]} numberOfLines={1}>
               {track.title}
             </Text>
             <Text style={styles.artist} numberOfLines={1}>{track.artist}</Text>
@@ -111,21 +106,13 @@ const TrackCard = memo(function TrackCard({ track, queue, showIndex }: TrackCard
 
         <View style={styles.right}>
           <Text style={styles.duration}>{formatDuration(track.duration)}</Text>
-          <GlassIcon
-            name="heart"
-            size={16}
-            containerSize={32}
-            active={liked}
-            color={liked ? "#A78BFA" : "rgba(255,255,255,0.3)"}
-            onPress={() => toggleFavorite(track)}
-          />
+          <Pressable onPress={() => toggleFavorite(track)} hitSlop={8} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
+            <Feather name="heart" size={18} color={liked ? "#A78BFA" : "#535353"} />
+          </Pressable>
           <DownloadButton track={track} />
-          <GlassIcon
-            name="more-vertical"
-            size={16}
-            containerSize={32}
-            onPress={() => setShowModal(true)}
-          />
+          <Pressable onPress={() => setShowModal(true)} hitSlop={8} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
+            <Feather name="more-vertical" size={18} color="#535353" />
+          </Pressable>
         </View>
       </Pressable>
 
@@ -144,13 +131,13 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     justifyContent: "space-between",
   },
   containerActive: {
-    backgroundColor: "rgba(124,58,237,0.10)",
+    backgroundColor: "rgba(124,58,237,0.08)",
+    borderRadius: 8,
   },
   left: {
     flexDirection: "row",
@@ -163,19 +150,19 @@ const styles = StyleSheet.create({
     width: 18,
     fontSize: 13,
     textAlign: "center",
-    color: "rgba(255,255,255,0.35)",
+    color: "#535353",
     fontFamily: Platform.OS === "ios" ? "Inter_400Regular" : undefined,
   },
   artWrapper: { position: "relative" },
   artwork: {
     width: 48,
     height: 48,
-    borderRadius: 10,
-    backgroundColor: "#0a0a18",
+    borderRadius: 4,
+    backgroundColor: "#282828",
   },
   activeOverlay: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 10,
+    borderRadius: 4,
     backgroundColor: "rgba(0,0,0,0.55)",
     alignItems: "center",
     justifyContent: "center",
@@ -184,33 +171,33 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
-    color: "#fff",
+    color: "#FFFFFF",
   },
   artist: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.45)",
+    color: "#B3B3B3",
   },
   right: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 10,
     flexShrink: 0,
   },
   duration: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.3)",
+    color: "#535353",
   },
   progressRing: {
     width: 32,
     height: 32,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: "rgba(167,139,250,0.6)",
+    borderColor: "#A78BFA",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(8,8,16,0.5)",
+    backgroundColor: "#282828",
   },
   progressText: {
     fontSize: 6,

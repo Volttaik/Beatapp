@@ -70,17 +70,14 @@ function QuickCard({ track, queue }: { track: Track; queue: Track[] }) {
 const qc = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "#282828",
+    borderRadius: 6,
     overflow: "hidden",
     flexDirection: "row",
     alignItems: "center",
   },
   cardActive: {
-    borderColor: "rgba(167,139,250,0.35)",
-    backgroundColor: "rgba(124,58,237,0.12)",
+    backgroundColor: "rgba(124,58,237,0.20)",
   },
   art: { width: 54, height: 54 },
   title: {

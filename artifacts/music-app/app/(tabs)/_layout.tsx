@@ -1,5 +1,3 @@
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
 import { Tabs, Redirect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,6 +7,7 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 
@@ -22,80 +21,74 @@ const hasClerk = publishableKey.startsWith("pk_");
 const TAB_CONFIG: {
   name: string;
   icon: React.ComponentProps<typeof Feather>["name"];
+  label: string;
 }[] = [
-  { name: "index", icon: "home" },
-  { name: "search", icon: "search" },
-  { name: "library", icon: "book-open" },
-  { name: "favorites", icon: "heart" },
-  { name: "profile", icon: "user" },
+  { name: "index", icon: "home", label: "Home" },
+  { name: "search", icon: "search", label: "Search" },
+  { name: "library", icon: "book-open", label: "Library" },
+  { name: "favorites", icon: "heart", label: "Likes" },
+  { name: "profile", icon: "user", label: "Profile" },
 ];
 
-function GlassTabButton({
+const ACTIVE_COLOR = "#FFFFFF";
+const INACTIVE_COLOR = "#9B9B9B";
+
+function SpotifyTabButton({
   icon,
+  label,
   focused,
   onPress,
 }: {
   icon: React.ComponentProps<typeof Feather>["name"];
+  label: string;
   focused: boolean;
   onPress: () => void;
 }) {
+  const color = focused ? ACTIVE_COLOR : INACTIVE_COLOR;
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [tab.btn, pressed && { opacity: 0.55 }]}
+      style={({ pressed }) => [tab.btn, pressed && { opacity: 0.6 }]}
     >
-      <Feather
-        name={icon}
-        size={24}
-        color={focused ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.30)"}
-      />
+      <Feather name={icon} size={22} color={color} />
+      <Text style={[tab.label, { color }]} numberOfLines={1}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
-function FloatingTabBar({ state, navigation }: any) {
+function SpotifyTabBar({ state, navigation }: any) {
   const { currentTrack } = usePlayer();
   const insets = useSafeAreaInsets();
 
   return (
-    <View
-      style={[bar.wrapper, { paddingBottom: insets.bottom }]}
-      pointerEvents="box-none"
-    >
+    <View style={[bar.wrapper, { paddingBottom: insets.bottom }]}>
       {currentTrack ? <MiniPlayer /> : null}
-      <BlurView intensity={90} tint="dark" style={bar.blurBar}>
-        <LinearGradient
-          colors={["rgba(255,255,255,0.07)", "rgba(255,255,255,0.01)", "transparent"]}
-          locations={[0, 0.4, 1]}
-          style={StyleSheet.absoluteFill}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          pointerEvents="none"
-        />
-        <View style={bar.row}>
-          {state.routes.map((route: any, index: number) => {
-            const focused = state.index === index;
-            const cfg = TAB_CONFIG.find((c) => c.name === route.name);
-            return (
-              <GlassTabButton
-                key={route.key}
-                icon={cfg?.icon ?? "circle"}
-                focused={focused}
-                onPress={() => {
-                  const event = navigation.emit({
-                    type: "tabPress",
-                    target: route.key,
-                    canPreventDefault: true,
-                  });
-                  if (!focused && !event.defaultPrevented) {
-                    navigation.navigate(route.name);
-                  }
-                }}
-              />
-            );
-          })}
-        </View>
-      </BlurView>
+      <View style={bar.tabRow}>
+        {state.routes.map((route: any, index: number) => {
+          const focused = state.index === index;
+          const cfg = TAB_CONFIG.find((c) => c.name === route.name);
+          return (
+            <SpotifyTabButton
+              key={route.key}
+              icon={cfg?.icon ?? "circle"}
+              label={cfg?.label ?? route.name}
+              focused={focused}
+              onPress={() => {
+                const event = navigation.emit({
+                  type: "tabPress",
+                  target: route.key,
+                  canPreventDefault: true,
+                });
+                if (!focused && !event.defaultPrevented) {
+                  navigation.navigate(route.name);
+                }
+              }}
+            />
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -103,7 +96,7 @@ function FloatingTabBar({ state, navigation }: any) {
 function TabsContent() {
   return (
     <Tabs
-      tabBar={(props) => <FloatingTabBar {...props} />}
+      tabBar={(props) => <SpotifyTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen name="index" />
@@ -121,16 +114,13 @@ function TabLayoutWithClerk() {
 
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#02040C" }}>
-        <ActivityIndicator size="large" color="#7C3AED" />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#121212" }}>
+        <ActivityIndicator size="large" color="#1DB954" />
       </View>
     );
   }
 
-  if (!isSignedIn) {
-    return <Redirect href="/(auth)/sign-in" />;
-  }
-
+  if (!isSignedIn) return <Redirect href="/(auth)/sign-in" />;
   return <TabsContent />;
 }
 
@@ -139,16 +129,13 @@ function TabLayoutLocal() {
 
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#02040C" }}>
-        <ActivityIndicator size="large" color="#7C3AED" />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#121212" }}>
+        <ActivityIndicator size="large" color="#1DB954" />
       </View>
     );
   }
 
-  if (!isSignedIn) {
-    return <Redirect href="/(auth)/sign-in" />;
-  }
-
+  if (!isSignedIn) return <Redirect href="/(auth)/sign-in" />;
   return <TabsContent />;
 }
 
@@ -162,7 +149,14 @@ const tab = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 14,
+    paddingTop: 10,
+    paddingBottom: 4,
+    gap: 4,
+  },
+  label: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.1,
   },
 });
 
@@ -172,13 +166,10 @@ const bar = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    backgroundColor: "#181818",
   },
-  blurBar: {
-    overflow: "hidden",
-  },
-  row: {
+  tabRow: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
+    alignItems: "flex-start",
   },
 });
