@@ -63,7 +63,7 @@ task = "shell.exec"
 args = "PORT=9000 python3 artifacts/yt-music-service/app.py"
 
 [agent]
-stack = "PNPM_WORKSPACE"
+stack = "BEST_EFFORT_FALLBACK"
 expertMode = true
 
 [postMerge]
