@@ -46,6 +46,12 @@ function RootLayoutNav() {
         options={{ presentation: "modal", headerShown: false, animation: "slide_from_bottom" }}
       />
       <Stack.Screen name="settings" options={{ headerShown: false, animation: "slide_from_right" }} />
+      <Stack.Screen name="appearance" options={{ headerShown: false, animation: "slide_from_right" }} />
+      <Stack.Screen name="license" options={{ headerShown: false, animation: "slide_from_right" }} />
+      <Stack.Screen name="privacy" options={{ headerShown: false, animation: "slide_from_right" }} />
+      <Stack.Screen name="terms" options={{ headerShown: false, animation: "slide_from_right" }} />
+      <Stack.Screen name="oss" options={{ headerShown: false, animation: "slide_from_right" }} />
+      <Stack.Screen name="about" options={{ headerShown: false, animation: "slide_from_right" }} />
       <Stack.Screen name="playlist/[id]" options={{ headerShown: false, animation: "slide_from_right" }} />
       <Stack.Screen
         name="playlist/create"

@@ -23,11 +23,15 @@ export default function GlassCard({
     <>
       {shine && (
         <LinearGradient
-          colors={["rgba(255,255,255,0.13)", "rgba(255,255,255,0.02)", "transparent"]}
-          locations={[0, 0.3, 1]}
+          colors={[
+            "rgba(255,255,255,0.16)",
+            "rgba(255,255,255,0.04)",
+            "transparent",
+          ]}
+          locations={[0, 0.28, 1]}
           style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0.5, y: 0.6 }}
+          end={{ x: 0.6, y: 0.7 }}
           pointerEvents="none"
         />
       )}
@@ -59,26 +63,26 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.22)",
-    borderLeftColor: "rgba(255,255,255,0.12)",
+    borderTopColor: "rgba(255,255,255,0.24)",
+    borderLeftColor: "rgba(255,255,255,0.13)",
     borderRightColor: "rgba(255,255,255,0.05)",
     borderBottomColor: "rgba(255,255,255,0.04)",
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(8,8,16,0.52)",
+    backgroundColor: "rgba(6,6,14,0.48)",
   },
   webGlass: {
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.22)",
-    borderLeftColor: "rgba(255,255,255,0.12)",
+    borderTopColor: "rgba(255,255,255,0.24)",
+    borderLeftColor: "rgba(255,255,255,0.13)",
     borderRightColor: "rgba(255,255,255,0.05)",
     borderBottomColor: "rgba(255,255,255,0.04)",
-    backgroundColor: "rgba(12,12,20,0.65)",
-    backdropFilter: "blur(22px)" as any,
+    backgroundColor: "rgba(10,10,18,0.62)",
+    backdropFilter: "blur(24px)" as any,
     overflow: "hidden",
   },
 });

@@ -24,9 +24,11 @@ export interface FreetouseTrack {
 export interface FreetouseCategory {
   id: string;
   name: string;
-  type: string;
+  type?: string;
   thumbnails?: { sm?: string; md?: string; lg?: string };
 }
+
+const DIRECT_API = "https://api.freetouse.com/v3";
 
 function getBaseUrl(): string {
   const domain = process.env.EXPO_PUBLIC_DOMAIN;
@@ -34,33 +36,34 @@ function getBaseUrl(): string {
   return `https://${domain}`;
 }
 
+function buildUrl(path: string, params: Record<string, string> = {}): string {
+  const baseUrl = getBaseUrl();
+  const q = new URLSearchParams(params);
+  const qs = q.toString() ? `?${q}` : "";
+  if (baseUrl) return `${baseUrl}/api${path}${qs}`;
+  return `${DIRECT_API}${path}${qs}`;
+}
+
 export function mapFreetouseTrack(t: FreetouseTrack): Track | null {
   if (!t?.id || !t?.files?.mp3) return null;
   const artistEntry = Array.isArray(t.artists) ? t.artists[0] : null;
   const artistName =
-    artistEntry && Array.isArray(artistEntry) ? artistEntry[1]?.name : "Unknown Artist";
+    artistEntry && Array.isArray(artistEntry)
+      ? (artistEntry[1] as any)?.name
+      : "Unknown Artist";
   return {
     id: t.id,
     title: t.title ?? "Unknown",
     artist: artistName ?? "Unknown Artist",
     album: t.genre ?? "",
-    artwork: t.thumbnails?.md ?? t.thumbnails?.lg ?? "",
+    artwork: t.thumbnails?.md ?? t.thumbnails?.lg ?? t.thumbnails?.sm ?? "",
     audioUrl: t.files.mp3,
     duration: Math.floor(t.duration ?? 0),
     genre: t.genre,
   };
 }
 
-export async function fetchFreetouseTracks(
-  params: Record<string, string> = {}
-): Promise<Track[]> {
-  const baseUrl = getBaseUrl();
-  const q = new URLSearchParams({ limit: "20", ...params });
-
-  const url = baseUrl
-    ? `${baseUrl}/api/freetouse/tracks?${q}`
-    : `https://api.freetouse.com/v3/music/tracks/all?${q}`;
-
+async function fetchAndMap(url: string): Promise<Track[]> {
   try {
     const res = await fetch(url);
     if (!res.ok) return [];
@@ -74,57 +77,31 @@ export async function fetchFreetouseTracks(
   }
 }
 
+export async function fetchFreetouseTracks(
+  params: Record<string, string> = {}
+): Promise<Track[]> {
+  const url = buildUrl("/music/tracks/all", { limit: "20", ...params });
+  return fetchAndMap(url);
+}
+
 export async function searchFreetouseTracks(query: string): Promise<Track[]> {
-  const baseUrl = getBaseUrl();
-  const q = new URLSearchParams({ q: query, limit: "30" });
-
-  const url = baseUrl
-    ? `${baseUrl}/api/freetouse/tracks/search?${q}`
-    : `https://api.freetouse.com/v3/music/tracks/search?${q}`;
-
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (!Array.isArray(data?.data)) return [];
-    return (data.data as FreetouseTrack[])
-      .map(mapFreetouseTrack)
-      .filter((t): t is Track => t !== null);
-  } catch {
-    return [];
-  }
+  const url = buildUrl("/music/tracks/search", { q: query, limit: "30" });
+  return fetchAndMap(url);
 }
 
 export async function fetchFreetouseCategoryTracks(
   categoryId: string,
   params: Record<string, string> = {}
 ): Promise<Track[]> {
-  const baseUrl = getBaseUrl();
-  const q = new URLSearchParams({ limit: "20", ...params });
-
-  const url = baseUrl
-    ? `${baseUrl}/api/freetouse/categories/${categoryId}/tracks?${q}`
-    : `https://api.freetouse.com/v3/music/categories/${categoryId}/tracks?${q}`;
-
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (!Array.isArray(data?.data)) return [];
-    return (data.data as FreetouseTrack[])
-      .map(mapFreetouseTrack)
-      .filter((t): t is Track => t !== null);
-  } catch {
-    return [];
-  }
+  const url = buildUrl(`/music/categories/${categoryId}/tracks`, {
+    limit: "20",
+    ...params,
+  });
+  return fetchAndMap(url);
 }
 
 export async function fetchFreetouseCategories(): Promise<FreetouseCategory[]> {
-  const baseUrl = getBaseUrl();
-  const url = baseUrl
-    ? `${baseUrl}/api/freetouse/categories`
-    : `https://api.freetouse.com/v3/music/categories/all`;
-
+  const url = buildUrl("/music/categories/all");
   try {
     const res = await fetch(url);
     if (!res.ok) return [];
@@ -136,7 +113,24 @@ export async function fetchFreetouseCategories(): Promise<FreetouseCategory[]> {
   }
 }
 
-// Legacy aliases so old imports still compile
+export async function fetchRelatedTracks(trackId: string): Promise<Track[]> {
+  const url = buildUrl(`/music/tracks/${trackId}/related`);
+  return fetchAndMap(url);
+}
+
+export async function fetchTrackById(id: string): Promise<Track | null> {
+  const url = buildUrl(`/music/tracks/${id}`);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return mapFreetouseTrack(data?.data ?? data);
+  } catch {
+    return null;
+  }
+}
+
+// Legacy aliases
 export const fetchJamendoTracks = fetchFreetouseTracks;
 export const searchJamendoTracks = searchFreetouseTracks;
 

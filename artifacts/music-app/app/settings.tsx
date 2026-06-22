@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -146,9 +147,20 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 140 }]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 160 }]}
         showsVerticalScrollIndicator={false}
       >
+        <SectionHeader title="APPEARANCE" />
+        <GlassCard style={styles.card} intensity={60} shine>
+          <SettingRow
+            icon="image"
+            label="Wallpaper & Profile Photo"
+            subtitle="Customize your app background"
+            onPress={() => router.push("/appearance" as any)}
+            showChevron
+          />
+        </GlassCard>
+
         <SectionHeader title="AUDIO" />
         <GlassCard style={styles.card} intensity={60} shine>
           <SettingRow
@@ -221,19 +233,32 @@ export default function SettingsScreen() {
             icon="shield"
             label="Privacy Policy"
             showChevron
-            onPress={() => {}}
+            onPress={() => router.push("/privacy" as any)}
           />
           <SettingRow
             icon="file-text"
             label="Terms of Service"
             showChevron
-            onPress={() => {}}
+            onPress={() => router.push("/terms" as any)}
+          />
+          <SettingRow
+            icon="book"
+            label="Music Licenses"
+            showChevron
+            onPress={() => router.push("/license" as any)}
           />
           <SettingRow
             icon="github"
             label="Open Source Licenses"
             showChevron
-            onPress={() => {}}
+            onPress={() => router.push("/oss" as any)}
+          />
+          <SettingRow
+            icon="external-link"
+            label="Free To Use API"
+            subtitle="Music provided by freetouse.com"
+            showChevron
+            onPress={() => Linking.openURL("https://freetouse.com").catch(() => {})}
           />
         </GlassCard>
       </ScrollView>

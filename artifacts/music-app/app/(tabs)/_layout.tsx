@@ -9,6 +9,7 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 
@@ -18,20 +19,26 @@ import { usePlayer } from "@/contexts/PlayerContext";
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
 const hasClerk = publishableKey.startsWith("pk_");
 
-const TAB_ICONS: Record<string, React.ComponentProps<typeof Feather>["name"]> = {
-  index: "home",
-  search: "search",
-  library: "book-open",
-  favorites: "heart",
-  profile: "user",
-};
+const TAB_CONFIG: {
+  name: string;
+  icon: React.ComponentProps<typeof Feather>["name"];
+  label: string;
+}[] = [
+  { name: "index", icon: "home", label: "Home" },
+  { name: "search", icon: "search", label: "Search" },
+  { name: "library", icon: "book-open", label: "Library" },
+  { name: "favorites", icon: "heart", label: "Likes" },
+  { name: "profile", icon: "user", label: "Profile" },
+];
 
-function GlassTabIcon({
-  name,
+function GlassTabButton({
+  icon,
+  label,
   focused,
   onPress,
 }: {
-  name: React.ComponentProps<typeof Feather>["name"];
+  icon: React.ComponentProps<typeof Feather>["name"];
+  label: string;
   focused: boolean;
   onPress: () => void;
 }) {
@@ -41,20 +48,21 @@ function GlassTabIcon({
       style={({ pressed }) => [tab.btn, pressed && { opacity: 0.65 }]}
     >
       <BlurView
-        intensity={focused ? 75 : 55}
+        intensity={focused ? 80 : 55}
         tint="dark"
-        style={[
-          tab.blur,
-          focused && tab.blurActive,
-        ]}
+        style={[tab.blur, focused && tab.blurActive]}
       >
         <LinearGradient
           colors={
             focused
-              ? ["rgba(255,255,255,0.18)", "rgba(255,255,255,0.04)", "transparent"]
+              ? [
+                  "rgba(255,255,255,0.22)",
+                  "rgba(255,255,255,0.06)",
+                  "transparent",
+                ]
               : ["rgba(255,255,255,0.08)", "transparent"]
           }
-          locations={focused ? [0, 0.35, 1] : [0, 1]}
+          locations={focused ? [0, 0.4, 1] : [0, 1]}
           style={StyleSheet.absoluteFill}
           start={{ x: 0, y: 0 }}
           end={{ x: 0.5, y: 1 }}
@@ -62,10 +70,19 @@ function GlassTabIcon({
         />
         <View style={tab.inner}>
           <Feather
-            name={name}
-            size={22}
-            color={focused ? "#ffffff" : "rgba(255,255,255,0.38)"}
+            name={icon}
+            size={20}
+            color={focused ? "#ffffff" : "rgba(255,255,255,0.35)"}
           />
+          <Text
+            style={[
+              tab.label,
+              focused ? tab.labelActive : tab.labelInactive,
+            ]}
+            numberOfLines={1}
+          >
+            {label}
+          </Text>
         </View>
       </BlurView>
     </Pressable>
@@ -77,16 +94,20 @@ function FloatingTabBar({ state, navigation }: any) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[bar.wrapper, { paddingBottom: insets.bottom + 8 }]} pointerEvents="box-none">
+    <View
+      style={[bar.wrapper, { paddingBottom: insets.bottom + 6 }]}
+      pointerEvents="box-none"
+    >
       {currentTrack ? <MiniPlayer /> : null}
       <View style={bar.row}>
         {state.routes.map((route: any, index: number) => {
           const focused = state.index === index;
-          const icon = TAB_ICONS[route.name] ?? "circle";
+          const cfg = TAB_CONFIG.find((c) => c.name === route.name);
           return (
-            <GlassTabIcon
+            <GlassTabButton
               key={route.key}
-              name={icon}
+              icon={cfg?.icon ?? "circle"}
+              label={cfg?.label ?? route.name}
               focused={focused}
               onPress={() => {
                 const event = navigation.emit({
@@ -127,7 +148,14 @@ function TabLayoutWithClerk() {
 
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#02040C" }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#02040C",
+        }}
+      >
         <ActivityIndicator size="large" color="#7C3AED" />
       </View>
     );
@@ -147,32 +175,45 @@ export default function TabLayout() {
 
 const tab = StyleSheet.create({
   btn: {
-    borderRadius: 26,
+    borderRadius: 20,
     overflow: "hidden",
+    flex: 1,
   },
   blur: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    borderRadius: 20,
     overflow: "hidden",
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.14)",
-    borderLeftColor: "rgba(255,255,255,0.08)",
-    borderRightColor: "rgba(255,255,255,0.04)",
+    borderTopColor: "rgba(255,255,255,0.16)",
+    borderLeftColor: "rgba(255,255,255,0.09)",
+    borderRightColor: "rgba(255,255,255,0.05)",
     borderBottomColor: "rgba(255,255,255,0.03)",
   },
   blurActive: {
-    borderTopColor: "rgba(255,255,255,0.26)",
-    borderLeftColor: "rgba(255,255,255,0.14)",
+    borderTopColor: "rgba(255,255,255,0.30)",
+    borderLeftColor: "rgba(255,255,255,0.16)",
+    borderRightColor: "rgba(255,255,255,0.08)",
   },
   inner: {
     flex: 1,
-    backgroundColor: "rgba(8,8,18,0.42)",
+    backgroundColor: "rgba(8,8,18,0.44)",
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 10,
+    gap: 4,
+  },
+  label: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.2,
+  },
+  labelActive: {
+    color: "#ffffff",
+  },
+  labelInactive: {
+    color: "rgba(255,255,255,0.32)",
   },
 });
 
@@ -185,10 +226,9 @@ const bar = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 22,
-    paddingHorizontal: 20,
+    alignItems: "stretch",
+    gap: 8,
+    paddingHorizontal: 12,
     paddingTop: 8,
   },
 });

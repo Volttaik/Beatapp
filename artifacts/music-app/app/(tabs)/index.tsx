@@ -19,6 +19,7 @@ import GlassIcon from "@/components/GlassIcon";
 import ScreenBackground from "@/components/ScreenBackground";
 import TrackCard from "@/components/TrackCard";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { useAppearance } from "@/contexts/AppearanceContext";
 import { fetchFreetouseTracks, Track } from "@/data/tracks";
 import { useUserSafe } from "@/hooks/useClerkSafe";
 
@@ -32,11 +33,20 @@ function getGreeting() {
   return "Good Evening";
 }
 
-function UserAvatar({ initial }: { initial: string }) {
+function UserAvatar({ initial, profilePic }: { initial: string; profilePic: string | null }) {
+  if (profilePic) {
+    return (
+      <Pressable onPress={() => router.push("/(tabs)/profile" as any)}>
+        <Image source={profilePic} style={st.avatarImg} contentFit="cover" />
+      </Pressable>
+    );
+  }
   return (
-    <GlassCard style={st.avatar} intensity={60}>
-      <Text style={st.avatarText}>{initial.toUpperCase()}</Text>
-    </GlassCard>
+    <Pressable onPress={() => router.push("/(tabs)/profile" as any)}>
+      <GlassCard style={st.avatar} intensity={60}>
+        <Text style={st.avatarText}>{initial.toUpperCase()}</Text>
+      </GlassCard>
+    </Pressable>
   );
 }
 
@@ -48,7 +58,7 @@ function QuickCard({ track, queue }: { track: Track; queue: Track[] }) {
       style={({ pressed }) => [qc.card, isActive && qc.cardActive, pressed && { opacity: 0.7 }]}
       onPress={() => playTrack(track, queue)}
     >
-      <Image source={track.artwork} style={qc.art} contentFit="cover" />
+      <Image source={track.artwork || undefined} style={qc.art} contentFit="cover" />
       <Text style={[qc.title, isActive && { color: "#A78BFA" }]} numberOfLines={2}>
         {track.title}
       </Text>
@@ -97,16 +107,14 @@ function RotationRow({ track, queue }: { track: Track; queue: Track[] }) {
       style={({ pressed }) => [rr.row, pressed && { opacity: 0.7 }]}
       onPress={() => playTrack(track, queue)}
     >
-      <Image source={track.artwork} style={rr.art} contentFit="cover" />
+      <Image source={track.artwork || undefined} style={rr.art} contentFit="cover" />
       <View style={rr.info}>
         <Text style={[rr.title, isActive && { color: "#A78BFA" }]} numberOfLines={1}>
           {track.title}
         </Text>
         <Text style={rr.artist} numberOfLines={1}>{track.artist}</Text>
       </View>
-      <Pressable hitSlop={12} onPress={() => router.push("/player" as any)}>
-        <Feather name="more-vertical" size={18} color="rgba(255,255,255,0.3)" />
-      </Pressable>
+      {isActive && <Feather name="volume-2" size={16} color="#A78BFA" style={{ marginRight: 4 }} />}
     </Pressable>
   );
 }
@@ -134,8 +142,12 @@ function RecoCard({ track, queue }: { track: Track; queue: Track[] }) {
       style={({ pressed }) => [rc.card, pressed && { opacity: 0.7 }]}
       onPress={() => playTrack(track, queue)}
     >
-      <Image source={track.artwork} style={rc.art} contentFit="cover" />
-      {isActive && <View style={rc.overlay}><Feather name="pause" size={20} color="#fff" /></View>}
+      <Image source={track.artwork || undefined} style={rc.art} contentFit="cover" />
+      {isActive && (
+        <View style={rc.overlay}>
+          <Feather name="pause" size={20} color="#fff" />
+        </View>
+      )}
       <Text style={[rc.title, isActive && { color: "#A78BFA" }]} numberOfLines={2}>
         {track.title}
       </Text>
@@ -161,6 +173,7 @@ const rc = StyleSheet.create({
 
 export default function HomeScreen() {
   const { user } = useUserSafe();
+  const { profilePicture } = useAppearance();
   const insets = useSafeAreaInsets();
   const { recentlyPlayed, playTrack } = usePlayer();
   const [filter, setFilter] = useState<Filter>("All");
@@ -183,9 +196,9 @@ export default function HomeScreen() {
   const load = async () => {
     try {
       const [t, n, p] = await Promise.all([
-        fetchFreetouseTracks({ limit: "20", page: "1" }),
-        fetchFreetouseTracks({ limit: "20", page: "2" }),
-        fetchFreetouseTracks({ limit: "20", page: "3" }),
+        fetchFreetouseTracks({ limit: "20", offset: "0" }),
+        fetchFreetouseTracks({ limit: "20", offset: "20" }),
+        fetchFreetouseTracks({ limit: "20", offset: "40" }),
       ]);
       setTrending(t);
       setNewReleases(n);
@@ -228,7 +241,7 @@ export default function HomeScreen() {
     <ScreenBackground>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingTop: topPad + 8, paddingBottom: 140 }}
+        contentContainerStyle={{ paddingTop: topPad + 8, paddingBottom: 160 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="rgba(255,255,255,0.5)" />
         }
@@ -236,9 +249,7 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={st.headerRow}>
-          <Pressable onPress={() => router.push("/(tabs)/profile" as any)}>
-            <UserAvatar initial={initial} />
-          </Pressable>
+          <UserAvatar initial={initial} profilePic={profilePicture} />
           <View style={{ flex: 1, paddingHorizontal: 12 }}>
             <Text style={st.greeting}>{getGreeting()}</Text>
             <Text style={st.username} numberOfLines={1}>{firstName}</Text>
@@ -272,6 +283,9 @@ export default function HomeScreen() {
         {loading ? (
           <View style={{ alignItems: "center", paddingVertical: 40 }}>
             <ActivityIndicator color="rgba(255,255,255,0.5)" size="large" />
+            <Text style={{ color: "rgba(255,255,255,0.3)", marginTop: 12, fontFamily: "Inter_400Regular", fontSize: 13 }}>
+              Loading music...
+            </Text>
           </View>
         ) : pairs.length > 0 ? (
           <View style={[st.section, { paddingHorizontal: 14, gap: 8 }]}>
@@ -284,7 +298,14 @@ export default function HomeScreen() {
               </View>
             ))}
           </View>
-        ) : null}
+        ) : (
+          <View style={{ alignItems: "center", paddingVertical: 40 }}>
+            <Feather name="music" size={40} color="rgba(255,255,255,0.15)" />
+            <Text style={{ color: "rgba(255,255,255,0.3)", marginTop: 12, fontFamily: "Inter_400Regular", fontSize: 13 }}>
+              Pull down to refresh
+            </Text>
+          </View>
+        )}
 
         {/* Recent rotation / history */}
         {rotationItems.length > 0 && (
@@ -340,11 +361,18 @@ const st = StyleSheet.create({
     marginBottom: 18,
   },
   avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+  },
+  avatarImg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.2)",
   },
   avatarText: { color: "#fff", fontSize: 15, fontFamily: "Inter_700Bold" },
   greeting: {

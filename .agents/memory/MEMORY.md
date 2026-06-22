@@ -1,1 +1,2 @@
-- [Beatstream app architecture](beatstream-arch.md) — Expo 54 music app with Clerk auth, Jamendo API, 5-tab nav, playlist/queue/stats system
+- [Beatstream app architecture](beatstream-arch.md) — Expo 54 music app with Clerk auth, FreeTouse API, 5-tab nav, playlist/queue/stats system
+- [Beatstream workflows](beatstream-workflows.md) — Workflow names and port assignments for dev environment

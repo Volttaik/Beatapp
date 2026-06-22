@@ -1,8 +1,11 @@
 import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import React from "react";
+import React, { useState } from "react";
 import {
+  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -14,6 +17,7 @@ import {
 import GlassCard from "@/components/GlassCard";
 import GlassIcon from "@/components/GlassIcon";
 import ScreenBackground from "@/components/ScreenBackground";
+import { useAppearance } from "@/contexts/AppearanceContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { usePlaylists } from "@/contexts/PlaylistContext";
 import { usePlayer } from "@/contexts/PlayerContext";
@@ -83,6 +87,8 @@ export default function ProfileScreen() {
   const { playlists } = usePlaylists();
   const { recentlyPlayed } = usePlayer();
   const { stats } = useStats();
+  const { profilePicture, setProfilePicture } = useAppearance();
+  const [pickingImage, setPickingImage] = useState(false);
 
   const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
   const name = user?.fullName ?? user?.firstName ?? email.split("@")[0] ?? "Listener";
@@ -90,6 +96,42 @@ export default function ProfileScreen() {
   const topPad = Platform.OS === "web" ? 60 : insets.top;
   const hoursListened = Math.floor(stats.totalSeconds / 3600);
   const minutesListened = Math.floor((stats.totalSeconds % 3600) / 60);
+
+  const handlePickProfilePicture = async () => {
+    if (pickingImage) return;
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission needed",
+          "Please allow access to your photo library to set a profile picture.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+      setPickingImage(true);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "images",
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setProfilePicture(result.assets[0].uri);
+      }
+    } catch (e) {
+      Alert.alert("Error", "Could not open photo library.");
+    } finally {
+      setPickingImage(false);
+    }
+  };
+
+  const handleRemoveProfilePicture = () => {
+    Alert.alert("Remove Photo", "Remove your profile picture?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => setProfilePicture(null) },
+    ]);
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -99,14 +141,28 @@ export default function ProfileScreen() {
   return (
     <ScreenBackground>
       <ScrollView
-        contentContainerStyle={{ paddingTop: topPad + 16, paddingBottom: 140 }}
+        contentContainerStyle={{ paddingTop: topPad + 16, paddingBottom: 160 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Avatar hero */}
         <View style={st.hero}>
-          <GlassCard style={st.avatarCard} intensity={75} shine>
-            <Text style={st.avatarText}>{initial}</Text>
-          </GlassCard>
+          <Pressable onPress={handlePickProfilePicture} style={st.avatarWrapper}>
+            {profilePicture ? (
+              <Image source={profilePicture} style={st.avatarImg} contentFit="cover" />
+            ) : (
+              <GlassCard style={st.avatarCard} intensity={75} shine>
+                <Text style={st.avatarText}>{initial}</Text>
+              </GlassCard>
+            )}
+            <View style={st.avatarEditBadge}>
+              <Feather name="camera" size={11} color="#fff" />
+            </View>
+          </Pressable>
+          {profilePicture && (
+            <Pressable onPress={handleRemoveProfilePicture} style={{ marginTop: 6 }}>
+              <Text style={st.removePhotoText}>Remove photo</Text>
+            </Pressable>
+          )}
           <Text style={st.name}>{name}</Text>
           {email ? <Text style={st.email}>{email}</Text> : null}
 
@@ -135,7 +191,7 @@ export default function ProfileScreen() {
                 value: hoursListened > 0 ? `${hoursListened}h ${minutesListened}m` : `${minutesListened}m`,
                 label: "Total listening time",
               },
-              { icon: "star" as const, value: stats.topGenre, label: "Favorite genre" },
+              { icon: "star" as const, value: stats.topGenre || "—", label: "Favorite genre" },
               { icon: "clock" as const, value: String(recentlyPlayed.length), label: "Recently played" },
             ].map((item, i) => (
               <View key={i}>
@@ -156,6 +212,7 @@ export default function ProfileScreen() {
         <View style={st.section}>
           <Text style={st.sectionTitle}>Account</Text>
           <GlassCard style={st.menuCard} intensity={65} shine>
+            <MenuItem icon="camera" label="Change Profile Photo" onPress={handlePickProfilePicture} />
             <MenuItem icon="mail" label="Email" value={email.length > 24 ? `${email.slice(0, 22)}…` : email} />
             <MenuItem icon="heart" label="Liked Songs" value={`${favorites.length} tracks`} onPress={() => router.push("/(tabs)/favorites" as any)} />
             <MenuItem icon="list" label="My Playlists" value={`${playlists.length} playlists`} onPress={() => router.push("/(tabs)/library" as any)} />
@@ -168,7 +225,8 @@ export default function ProfileScreen() {
           <Text style={st.sectionTitle}>App</Text>
           <GlassCard style={st.menuCard} intensity={65} shine>
             <MenuItem icon="settings" label="Settings" onPress={() => router.push("/settings" as any)} />
-            <MenuItem icon="info" label="About BeatStream" onPress={() => router.push("/settings" as any)} />
+            <MenuItem icon="image" label="Appearance" onPress={() => router.push("/appearance" as any)} />
+            <MenuItem icon="info" label="About BeatStream" onPress={() => router.push("/about" as any)} />
             <MenuItem icon="log-out" label="Sign Out" onPress={handleSignOut} danger />
           </GlassCard>
         </View>
@@ -181,16 +239,42 @@ export default function ProfileScreen() {
 
 const st = StyleSheet.create({
   hero: { alignItems: "center", marginBottom: 28, paddingHorizontal: 20 },
+  avatarWrapper: { position: "relative", marginBottom: 14 },
   avatarCard: {
     width: 90,
     height: 90,
     borderRadius: 45,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 14,
+  },
+  avatarImg: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.2)",
   },
   avatarText: { color: "#fff", fontSize: 36, fontFamily: "Inter_700Bold" },
-  name: { color: "#fff", fontSize: 22, fontFamily: "Inter_700Bold", marginBottom: 4 },
+  avatarEditBadge: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#7C3AED",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(2,4,12,0.9)",
+  },
+  removePhotoText: {
+    color: "rgba(239,68,68,0.7)",
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    marginBottom: 8,
+  },
+  name: { color: "#fff", fontSize: 22, fontFamily: "Inter_700Bold", marginBottom: 4, marginTop: 6 },
   email: { color: "rgba(255,255,255,0.4)", fontSize: 13, fontFamily: "Inter_400Regular", marginBottom: 20 },
   statsRow: { flexDirection: "row", gap: 10, width: "100%" },
   statCard: { flex: 1, borderRadius: 14, alignItems: "center", paddingVertical: 16 },
