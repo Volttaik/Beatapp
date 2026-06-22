@@ -12,6 +12,11 @@ description: Key decisions and quirks for the Beatstream music streaming app bui
 - AsyncStorage for persistence
 - FreeTouse API (NOT Jamendo) via proxy: `${EXPO_PUBLIC_DOMAIN}/api/freetouse/*`
 - API server proxies to `https://api.freetouse.com/v3` — no API key needed
+- **YouTube Music** via Python Flask service on port 9000 (`artifacts/yt-music-service/app.py`)
+  - Uses ytmusicapi for search (real songs), yt-dlp for audio stream extraction
+  - Node.js API proxies: `/api/ytmusic/search`, `/api/ytmusic/trending`, `/api/ytmusic/stream/:videoId`
+  - YT Music tracks use `audioUrl: "ytmusic://<videoId>"` placeholder; PlayerContext resolves to real stream URL on play
+  - Workflow: `Start YT Music Service` — `PORT=9000 python3 artifacts/yt-music-service/app.py`
 
 ## FreeTouse API Response Shape
 - Track object: `{ id, title, duration, genre, artists, thumbnails, files: {mp3}, tags }`
@@ -26,7 +31,8 @@ description: Key decisions and quirks for the Beatstream music streaming app bui
 - GlassIcon: circular/rounded glass container wrapping Feather icon, same border treatment
 - Accent: `#7C3AED` / `#A78BFA` — used ONLY for active states, NOT backgrounds
 - No rainbow gradients anywhere; single purple accent only
-- Tab bar: full-width pill buttons with labels (Home/Search/Library/Likes/Profile), white active, rgba(255,255,255,0.32) inactive
+- Tab bar: bare Feather icons + labels on a single BlurView bar (no per-icon containers). Active = rgba(255,255,255,0.95), inactive = rgba(255,255,255,0.28)
+- GlassCard fix: layout styles (flexDirection, alignItems, gap, padding*) must be forwarded to the inner overlay View, not just the BlurView outer shell — otherwise row children stack vertically
 
 ## Key Decisions
 

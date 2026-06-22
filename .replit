@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "python-3.11"]
 
 [deployment]
 router = "application"
@@ -24,6 +24,10 @@ args = "Start API Server"
 task = "workflow.run"
 args = "Start Music App"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start YT Music Service"
+
 [[workflows.workflow]]
 name = "Start API Server"
 author = "agent"
@@ -46,6 +50,17 @@ outputType = "webview"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "PORT=8000 pnpm --filter @workspace/music-app run dev"
+
+[[workflows.workflow]]
+name = "Start YT Music Service"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=9000 python3 artifacts/yt-music-service/app.py"
 
 [agent]
 stack = "PNPM_WORKSPACE"

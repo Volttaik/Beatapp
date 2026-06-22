@@ -134,6 +134,55 @@ export async function fetchTrackById(id: string): Promise<Track | null> {
 export const fetchJamendoTracks = fetchFreetouseTracks;
 export const searchJamendoTracks = searchFreetouseTracks;
 
+// ── YouTube Music (ytmusicapi) ────────────────────────────────────────────
+
+export async function searchYTMusicTracks(query: string, limit = 30): Promise<Track[]> {
+  const url = buildUrl("/ytmusic/search", { q: query, limit: String(limit) });
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!Array.isArray(data?.results)) return [];
+    return data.results as Track[];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchYTMusicTrending(): Promise<Track[]> {
+  const url = buildUrl("/ytmusic/trending");
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!Array.isArray(data?.results)) return [];
+    return data.results as Track[];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchYTMusicStreamUrl(videoId: string): Promise<string | null> {
+  const url = buildUrl(`/ytmusic/stream/${videoId}`);
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(35000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data?.url as string) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function isYTMusicTrack(track: Track): boolean {
+  return track.audioUrl?.startsWith("ytmusic://") ?? false;
+}
+
+export function getYTMusicVideoId(track: Track): string | null {
+  if (!isYTMusicTrack(track)) return null;
+  return track.audioUrl.replace("ytmusic://", "");
+}
+
 export const FEATURED_GENRES = [
   { id: "91ca6cf0-08d4-0e57-e024-2fd0e1413327", label: "Chill" },
   { id: "f96cc1c5-9172-b0e2-6c63-eb3f3eff5598", label: "Cinematic" },

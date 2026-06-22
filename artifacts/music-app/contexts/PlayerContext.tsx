@@ -10,7 +10,7 @@ import React, {
   useState,
 } from "react";
 import { Platform } from "react-native";
-import { Track } from "@/data/tracks";
+import { Track, fetchYTMusicStreamUrl, isYTMusicTrack, getYTMusicVideoId } from "@/data/tracks";
 
 interface PlayerContextType {
   currentTrack: Track | null;
@@ -137,7 +137,20 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           soundRef.current = null;
         }
         const localUri = overrideUri ?? localUriResolverRef.current?.(track.id) ?? null;
-        const uri = localUri ?? track.audioUrl;
+        let resolvedUrl = localUri ?? track.audioUrl;
+        if (!localUri && isYTMusicTrack(track)) {
+          const videoId = getYTMusicVideoId(track);
+          if (videoId) {
+            const streamUrl = await fetchYTMusicStreamUrl(videoId);
+            if (!streamUrl) {
+              setPlaybackError("Could not fetch stream. Try another track.");
+              setIsLoading(false);
+              return;
+            }
+            resolvedUrl = streamUrl;
+          }
+        }
+        const uri = resolvedUrl;
         const { sound } = await Audio.Sound.createAsync(
           { uri },
           { shouldPlay: true, progressUpdateIntervalMillis: 500 },

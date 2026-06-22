@@ -20,7 +20,7 @@ import GlassIcon from "@/components/GlassIcon";
 import ScreenBackground from "@/components/ScreenBackground";
 import TrackCard from "@/components/TrackCard";
 import {
-  searchFreetouseTracks,
+  searchYTMusicTracks,
   fetchFreetouseCategoryTracks,
   Track,
   FEATURED_GENRES,
@@ -157,7 +157,7 @@ export default function SearchScreen() {
       setLoading(true);
       setSearched(true);
       try {
-        const res = await searchFreetouseTracks(q.trim());
+        const res = await searchYTMusicTracks(q.trim());
         setResults(res);
         await saveHistory(q.trim());
       } catch {
@@ -217,7 +217,7 @@ export default function SearchScreen() {
           <TextInput
             ref={inputRef}
             style={st.input}
-            placeholder="Artists, songs, genres..."
+            placeholder="Search YouTube Music..."
             placeholderTextColor="rgba(255,255,255,0.25)"
             value={query}
             onChangeText={handleChangeText}

@@ -1,0 +1,4 @@
+ytmusicapi==1.12.1
+yt-dlp
+flask
+flask-cors
