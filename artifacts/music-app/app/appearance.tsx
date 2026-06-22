@@ -3,12 +3,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useState } from "react";
 import {
   Alert,
-  Platform,
+  ImageBackground,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -22,15 +21,17 @@ import ScreenBackground from "@/components/ScreenBackground";
 import {
   useAppearance,
   WALLPAPERS,
+  CUSTOM_WALLPAPER,
   WallpaperOption,
 } from "@/contexts/AppearanceContext";
 
 const earthBg = require("../assets/images/earth-bg.jpg");
 
-function WallpaperPreview({ wallpaper, selected, onSelect }: {
+function WallpaperPreview({ wallpaper, selected, onSelect, customUri }: {
   wallpaper: WallpaperOption;
   selected: boolean;
   onSelect: () => void;
+  customUri?: string | null;
 }) {
   return (
     <Pressable
@@ -38,7 +39,12 @@ function WallpaperPreview({ wallpaper, selected, onSelect }: {
       style={({ pressed }) => [wp.item, pressed && { opacity: 0.8 }]}
     >
       <View style={[wp.preview, selected && wp.previewSelected]}>
-        {wallpaper.type === "image" ? (
+        {wallpaper.type === "custom" && customUri ? (
+          <>
+            <ImageBackground source={{ uri: customUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.45)" }]} />
+          </>
+        ) : wallpaper.type === "image" ? (
           <>
             <Image source={earthBg} style={StyleSheet.absoluteFill} contentFit="cover" />
             <View style={[StyleSheet.absoluteFill, { backgroundColor: wallpaper.overlay ?? "rgba(2,4,12,0.78)" }]} />
@@ -55,7 +61,6 @@ function WallpaperPreview({ wallpaper, selected, onSelect }: {
           </>
         )}
 
-        {/* Mini music UI mockup */}
         <View style={wp.miniUi}>
           <View style={wp.miniBar} />
           <View style={[wp.miniBar, { width: "60%", opacity: 0.5 }]} />
@@ -120,9 +125,18 @@ const wp = StyleSheet.create({
 
 export default function AppearanceScreen() {
   const insets = useSafeAreaInsets();
-  const { wallpaper, setWallpaper, profilePicture, setProfilePicture } = useAppearance();
+  const {
+    wallpaper,
+    setWallpaper,
+    profilePicture,
+    setProfilePicture,
+    customWallpaperUri,
+    setCustomWallpaper,
+    clearCustomWallpaper,
+  } = useAppearance();
   const [pickingImage, setPickingImage] = useState(false);
-  const topPad = Platform.OS === "web" ? 60 : insets.top;
+  const [pickingWallpaper, setPickingWallpaper] = useState(false);
+  const topPad = insets.top > 0 ? insets.top : 16;
 
   const handlePickProfilePicture = async () => {
     if (pickingImage) return;
@@ -147,6 +161,37 @@ export default function AppearanceScreen() {
     } finally {
       setPickingImage(false);
     }
+  };
+
+  const handlePickWallpaper = async () => {
+    if (pickingWallpaper) return;
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission needed", "Please allow access to your photo library.");
+        return;
+      }
+      setPickingWallpaper(true);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "images",
+        allowsEditing: false,
+        quality: 0.85,
+      });
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setCustomWallpaper(result.assets[0].uri);
+      }
+    } catch {
+      Alert.alert("Error", "Could not open photo library.");
+    } finally {
+      setPickingWallpaper(false);
+    }
+  };
+
+  const handleRemoveCustomWallpaper = () => {
+    Alert.alert("Remove Wallpaper", "Remove your custom photo and switch back to Earth Space?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: clearCustomWallpaper },
+    ]);
   };
 
   return (
@@ -203,6 +248,55 @@ export default function AppearanceScreen() {
 
         {/* Wallpaper */}
         <Text style={styles.sectionHeader}>APP WALLPAPER</Text>
+
+        {/* Upload from device card */}
+        <Pressable
+          onPress={handlePickWallpaper}
+          style={({ pressed }) => [styles.uploadCard, pressed && { opacity: 0.75 }]}
+        >
+          <View style={styles.uploadCardInner}>
+            {customWallpaperUri && wallpaper.id === "custom" ? (
+              <ImageBackground
+                source={{ uri: customWallpaperUri }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+              />
+            ) : null}
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 14 }]} />
+            <View style={styles.uploadContent}>
+              <View style={styles.uploadIconCircle}>
+                <Feather
+                  name={customWallpaperUri && wallpaper.id === "custom" ? "refresh-cw" : "image"}
+                  size={20}
+                  color="#A78BFA"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.uploadTitle}>
+                  {customWallpaperUri && wallpaper.id === "custom" ? "Change photo" : "Use a photo from your library"}
+                </Text>
+                <Text style={styles.uploadSub}>
+                  {customWallpaperUri && wallpaper.id === "custom"
+                    ? "Tap to pick a different photo"
+                    : "Set any image as your app background"}
+                </Text>
+              </View>
+              {customWallpaperUri && wallpaper.id === "custom" && (
+                <View style={styles.selectedBadge}>
+                  <Feather name="check" size={12} color="#fff" />
+                </View>
+              )}
+            </View>
+          </View>
+          {customWallpaperUri && wallpaper.id === "custom" && (
+            <Pressable onPress={handleRemoveCustomWallpaper} style={styles.removeWallpaperBtn}>
+              <Text style={styles.removeWallpaperText}>Remove photo</Text>
+            </Pressable>
+          )}
+        </Pressable>
+
+        <Text style={styles.orDivider}>— or choose a preset —</Text>
+
         <View style={styles.wallpaperGrid}>
           {WALLPAPERS.map((w) => (
             <WallpaperPreview
@@ -281,6 +375,63 @@ const styles = StyleSheet.create({
   },
   profileLabel: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#fff", marginBottom: 3 },
   profileSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.4)" },
+  uploadCard: {
+    borderRadius: 14,
+    overflow: "hidden",
+    borderWidth: 1.5,
+    borderColor: "rgba(167,139,250,0.25)",
+    marginBottom: 4,
+  },
+  uploadCardInner: {
+    height: 80,
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  uploadContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingHorizontal: 16,
+  },
+  uploadIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(124,58,237,0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(167,139,250,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  uploadTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#fff", marginBottom: 2 },
+  uploadSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.4)" },
+  selectedBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#7C3AED",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  removeWallpaperBtn: {
+    paddingVertical: 8,
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  removeWallpaperText: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    color: "rgba(255,100,100,0.8)",
+  },
+  orDivider: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.25)",
+    textAlign: "center",
+    marginVertical: 16,
+  },
   wallpaperGrid: {
     flexDirection: "row",
     flexWrap: "wrap",

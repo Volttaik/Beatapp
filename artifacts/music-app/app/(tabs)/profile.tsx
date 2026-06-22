@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useState } from "react";
 import {
   Alert,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -93,7 +92,7 @@ export default function ProfileScreen() {
   const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
   const name = user?.fullName ?? user?.firstName ?? email.split("@")[0] ?? "Listener";
   const initial = name[0]?.toUpperCase() ?? "B";
-  const topPad = Platform.OS === "web" ? 60 : insets.top;
+  const topPad = insets.top > 0 ? insets.top : 16;
   const hoursListened = Math.floor(stats.totalSeconds / 3600);
   const minutesListened = Math.floor((stats.totalSeconds % 3600) / 60);
 

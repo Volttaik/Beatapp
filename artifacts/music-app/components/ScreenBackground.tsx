@@ -11,7 +11,17 @@ interface ScreenBackgroundProps {
 }
 
 export default function ScreenBackground({ children }: ScreenBackgroundProps) {
-  const { wallpaper } = useAppearance();
+  const { wallpaper, customWallpaperUri } = useAppearance();
+
+  if (wallpaper.type === "custom" && customWallpaperUri) {
+    return (
+      <View style={styles.container}>
+        <ImageBackground source={{ uri: customWallpaperUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <View style={[styles.overlay, { backgroundColor: wallpaper.overlay ?? "rgba(0,0,0,0.55)" }]} />
+        {children}
+      </View>
+    );
+  }
 
   if (wallpaper.type === "image") {
     return (

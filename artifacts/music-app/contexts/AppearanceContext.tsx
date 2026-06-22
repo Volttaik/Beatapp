@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
-export type WallpaperType = "image" | "gradient";
+export type WallpaperType = "image" | "gradient" | "custom";
 
 export interface WallpaperOption {
   id: string;
@@ -62,6 +62,13 @@ export const WALLPAPERS: WallpaperOption[] = [
   },
 ];
 
+export const CUSTOM_WALLPAPER: WallpaperOption = {
+  id: "custom",
+  name: "My Photo",
+  type: "custom",
+  overlay: "rgba(0,0,0,0.55)",
+};
+
 const APPEARANCE_KEY = "beatstream_appearance";
 
 interface AppearanceContextType {
@@ -69,6 +76,9 @@ interface AppearanceContextType {
   setWallpaper: (w: WallpaperOption) => void;
   profilePicture: string | null;
   setProfilePicture: (uri: string | null) => void;
+  customWallpaperUri: string | null;
+  setCustomWallpaper: (uri: string) => void;
+  clearCustomWallpaper: () => void;
 }
 
 const AppearanceContext = createContext<AppearanceContextType | null>(null);
@@ -76,22 +86,31 @@ const AppearanceContext = createContext<AppearanceContextType | null>(null);
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
   const [wallpaper, setWallpaperState] = useState<WallpaperOption>(WALLPAPERS[0]);
   const [profilePicture, setProfilePictureState] = useState<string | null>(null);
+  const [customWallpaperUri, setCustomWallpaperUri] = useState<string | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem(APPEARANCE_KEY).then((raw) => {
       if (!raw) return;
       try {
-        const { wallpaperId, profilePicture: pic } = JSON.parse(raw);
-        const found = WALLPAPERS.find((w) => w.id === wallpaperId);
-        if (found) setWallpaperState(found);
+        const { wallpaperId, profilePicture: pic, customWallpaperUri: customUri } = JSON.parse(raw);
+        if (customUri) setCustomWallpaperUri(customUri);
+        if (wallpaperId === "custom" && customUri) {
+          setWallpaperState(CUSTOM_WALLPAPER);
+        } else {
+          const found = WALLPAPERS.find((w) => w.id === wallpaperId);
+          if (found) setWallpaperState(found);
+        }
         if (pic) setProfilePictureState(pic);
       } catch {}
     });
   }, []);
 
   const persist = useCallback(
-    (wallpaperId: string, pic: string | null) => {
-      AsyncStorage.setItem(APPEARANCE_KEY, JSON.stringify({ wallpaperId, profilePicture: pic })).catch(() => {});
+    (wallpaperId: string, pic: string | null, customUri: string | null) => {
+      AsyncStorage.setItem(
+        APPEARANCE_KEY,
+        JSON.stringify({ wallpaperId, profilePicture: pic, customWallpaperUri: customUri })
+      ).catch(() => {});
     },
     []
   );
@@ -99,21 +118,46 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   const setWallpaper = useCallback(
     (w: WallpaperOption) => {
       setWallpaperState(w);
-      persist(w.id, profilePicture);
+      persist(w.id, profilePicture, customWallpaperUri);
     },
-    [profilePicture, persist]
+    [profilePicture, customWallpaperUri, persist]
   );
 
   const setProfilePicture = useCallback(
     (uri: string | null) => {
       setProfilePictureState(uri);
-      persist(wallpaper.id, uri);
+      persist(wallpaper.id, uri, customWallpaperUri);
     },
-    [wallpaper.id, persist]
+    [wallpaper.id, customWallpaperUri, persist]
   );
 
+  const setCustomWallpaper = useCallback(
+    (uri: string) => {
+      setCustomWallpaperUri(uri);
+      setWallpaperState(CUSTOM_WALLPAPER);
+      persist(CUSTOM_WALLPAPER.id, profilePicture, uri);
+    },
+    [profilePicture, persist]
+  );
+
+  const clearCustomWallpaper = useCallback(() => {
+    setCustomWallpaperUri(null);
+    setWallpaperState(WALLPAPERS[0]);
+    persist(WALLPAPERS[0].id, profilePicture, null);
+  }, [profilePicture, persist]);
+
   return (
-    <AppearanceContext.Provider value={{ wallpaper, setWallpaper, profilePicture, setProfilePicture }}>
+    <AppearanceContext.Provider
+      value={{
+        wallpaper,
+        setWallpaper,
+        profilePicture,
+        setProfilePicture,
+        customWallpaperUri,
+        setCustomWallpaper,
+        clearCustomWallpaper,
+      }}
+    >
       {children}
     </AppearanceContext.Provider>
   );
