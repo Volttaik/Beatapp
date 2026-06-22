@@ -12,11 +12,11 @@ import {
 } from "react-native";
 
 import AddToPlaylistModal from "@/components/AddToPlaylistModal";
+import GlassIcon from "@/components/GlassIcon";
 import { useDownloads } from "@/contexts/DownloadContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { formatDuration, Track } from "@/data/tracks";
-import { useColors } from "@/hooks/useColors";
 
 interface TrackCardProps {
   track: Track;
@@ -32,17 +32,14 @@ function DownloadButton({ track }: { track: Track }) {
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (downloaded) {
-      deleteDownload(track.id);
-    } else if (!isDownloading) {
-      downloadTrack(track);
-    }
+    if (downloaded) deleteDownload(track.id);
+    else if (!isDownloading) downloadTrack(track);
   };
 
   if (isDownloading) {
     const pct = Math.round((progress.progress ?? 0) * 100);
     return (
-      <Pressable onPress={handlePress} hitSlop={8} style={styles.downloadBtn}>
+      <Pressable onPress={handlePress} hitSlop={8}>
         <View style={styles.progressRing}>
           <Text style={styles.progressText}>{pct}%</Text>
         </View>
@@ -51,35 +48,26 @@ function DownloadButton({ track }: { track: Track }) {
   }
 
   return (
-    <Pressable
+    <GlassIcon
+      name={downloaded ? "check-circle" : "download"}
+      size={16}
+      containerSize={32}
+      active={downloaded}
+      color={downloaded ? "#A78BFA" : "rgba(255,255,255,0.35)"}
       onPress={handlePress}
-      hitSlop={8}
-      style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-    >
-      <Feather
-        name={downloaded ? "check-circle" : "download"}
-        size={18}
-        color={downloaded ? "#A78BFA" : "rgba(255,255,255,0.3)"}
-      />
-    </Pressable>
+    />
   );
 }
 
 const TrackCard = memo(function TrackCard({ track, queue, showIndex }: TrackCardProps) {
-  const colors = useColors();
   const { playTrack, currentTrack, isPlaying, isLoading } = usePlayer();
   const { isFavorite, toggleFavorite } = useLibrary();
-  const { getLocalUri } = useDownloads();
   const [showModal, setShowModal] = useState(false);
 
   const isActive = currentTrack?.id === track.id;
   const liked = isFavorite(track.id);
 
-  const handlePress = () => {
-    const localUri = getLocalUri(track.id) ?? undefined;
-    playTrack(track, queue ?? [track], localUri);
-  };
-
+  const handlePress = () => playTrack(track, queue ?? [track]);
   const handleLongPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowModal(true);
@@ -90,76 +78,54 @@ const TrackCard = memo(function TrackCard({ track, queue, showIndex }: TrackCard
       <Pressable
         style={({ pressed }) => [
           styles.container,
-          { backgroundColor: isActive ? colors.secondary : "transparent" },
-          pressed && { opacity: 0.7 },
+          isActive && styles.containerActive,
+          pressed && { opacity: 0.75 },
         ]}
         onPress={handlePress}
         onLongPress={handleLongPress}
       >
         <View style={styles.left}>
-          {showIndex !== undefined && !isActive ? (
-            <Text style={[styles.index, { color: colors.mutedForeground }]}>
-              {showIndex + 1}
-            </Text>
-          ) : null}
-          <View style={styles.artworkContainer}>
-            <Image
-              source={track.artwork}
-              style={styles.artwork}
-              contentFit="cover"
-            />
+          {showIndex !== undefined && !isActive && (
+            <Text style={styles.index}>{showIndex + 1}</Text>
+          )}
+          <View style={styles.artWrapper}>
+            <Image source={track.artwork} style={styles.artwork} contentFit="cover" />
             {isActive && (
-              <View style={[styles.activeOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Feather
-                    name={isPlaying ? "pause" : "play"}
-                    size={14}
-                    color="#fff"
-                  />
-                )}
+              <View style={styles.activeOverlay}>
+                {isLoading
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Feather name={isPlaying ? "pause" : "play"} size={14} color="#fff" />}
               </View>
             )}
           </View>
           <View style={styles.info}>
             <Text
-              style={[
-                styles.title,
-                { color: isActive ? "#A78BFA" : colors.foreground },
-              ]}
+              style={[styles.title, isActive && { color: "#A78BFA" }]}
               numberOfLines={1}
             >
               {track.title}
             </Text>
-            <Text style={[styles.artist, { color: colors.mutedForeground }]} numberOfLines={1}>
-              {track.artist}
-            </Text>
+            <Text style={styles.artist} numberOfLines={1}>{track.artist}</Text>
           </View>
         </View>
+
         <View style={styles.right}>
-          <Text style={[styles.duration, { color: colors.mutedForeground }]}>
-            {formatDuration(track.duration)}
-          </Text>
-          <Pressable
+          <Text style={styles.duration}>{formatDuration(track.duration)}</Text>
+          <GlassIcon
+            name="heart"
+            size={16}
+            containerSize={32}
+            active={liked}
+            color={liked ? "#A78BFA" : "rgba(255,255,255,0.3)"}
             onPress={() => toggleFavorite(track)}
-            hitSlop={8}
-            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-          >
-            <Feather
-              name="heart"
-              size={18}
-              color={liked ? "#A78BFA" : colors.mutedForeground}
-            />
-          </Pressable>
+          />
           <DownloadButton track={track} />
-          <Pressable
+          <GlassIcon
+            name="more-vertical"
+            size={16}
+            containerSize={32}
             onPress={() => setShowModal(true)}
-            hitSlop={8}
-            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-          >
-            <Feather name="more-vertical" size={18} color="rgba(255,255,255,0.3)" />
-          </Pressable>
+          />
         </View>
       </Pressable>
 
@@ -178,10 +144,13 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 12,
     justifyContent: "space-between",
+  },
+  containerActive: {
+    backgroundColor: "rgba(124,58,237,0.10)",
   },
   left: {
     flexDirection: "row",
@@ -191,66 +160,61 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   index: {
-    width: 20,
-    fontSize: 14,
+    width: 18,
+    fontSize: 13,
     textAlign: "center",
+    color: "rgba(255,255,255,0.35)",
     fontFamily: Platform.OS === "ios" ? "Inter_400Regular" : undefined,
   },
-  artworkContainer: {
-    position: "relative",
-  },
+  artWrapper: { position: "relative" },
   artwork: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    backgroundColor: "#1C1C2A",
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: "#0a0a18",
   },
   activeOverlay: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 8,
+    borderRadius: 10,
+    backgroundColor: "rgba(0,0,0,0.55)",
     alignItems: "center",
     justifyContent: "center",
   },
-  info: {
-    flex: 1,
-    gap: 3,
-    minWidth: 0,
-  },
+  info: { flex: 1, gap: 3, minWidth: 0 },
   title: {
-    fontSize: 15,
-    fontWeight: "600",
-    fontFamily: Platform.OS === "ios" ? "Inter_600SemiBold" : undefined,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    color: "#fff",
   },
   artist: {
-    fontSize: 13,
-    fontFamily: Platform.OS === "ios" ? "Inter_400Regular" : undefined,
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.45)",
   },
   right: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 6,
     flexShrink: 0,
   },
   duration: {
-    fontSize: 13,
-    fontFamily: Platform.OS === "ios" ? "Inter_400Regular" : undefined,
-  },
-  downloadBtn: {
-    alignItems: "center",
-    justifyContent: "center",
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.3)",
   },
   progressRing: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: "#A78BFA",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "rgba(167,139,250,0.6)",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(8,8,16,0.5)",
   },
   progressText: {
     fontSize: 6,
     color: "#A78BFA",
-    fontFamily: Platform.OS === "ios" ? "Inter_600SemiBold" : undefined,
+    fontFamily: "Inter_700Bold",
   },
 });

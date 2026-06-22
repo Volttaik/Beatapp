@@ -12,11 +12,14 @@ description: Key decisions and quirks for the Beatstream music streaming app bui
 - AsyncStorage for persistence
 - Jamendo API via proxy: `${EXPO_PUBLIC_DOMAIN}/api/jamendo/tracks` with CLIENT_ID `b6747d04`
 
-## Color Scheme
-- Background: `#08080F`
-- Primary: `#7C3AED` (purple)
-- Accent: `#A78BFA`
-- Surface: `#13131F` / `#1C1C2A`
+## Design System (Glassmorphism)
+- Earth/space photo: `assets/images/earth-bg.jpg` — used as background on ALL screens
+- ScreenBackground renders earth image with `rgba(2,4,12,0.78)` dark overlay
+- GlassCard: BlurView intensity=70 + `rgba(8,8,16,0.52)` overlay + per-side borders (top: rgba(255,255,255,0.22), left: 0.12, right: 0.05, bottom: 0.04) + LinearGradient shine
+- GlassIcon: circular/rounded glass container wrapping Feather icon, same border treatment
+- Accent: `#7C3AED` / `#A78BFA` — used ONLY for active states, NOT backgrounds
+- No rainbow gradients anywhere; single purple accent only
+- Tab bar: white active, rgba(255,255,255,0.35) inactive, BlurView bg on iOS
 
 ## Key Decisions
 
@@ -34,23 +37,24 @@ Cast with `(signInResult as any).signIn` for password reset flows.
 ### GlassCard web styles
 `WebkitBackdropFilter` causes TS type error in RN StyleSheet. Use `as any` on the style object.
 
-### useColors hook
-Type the return explicitly to avoid TS inference issues with `colors.radius`.
+### Per-side border colors
+React Native supports `borderTopColor`, `borderLeftColor`, etc. alongside `borderWidth: 1`.
+This gives the top-lit glass effect (brighter top border = glass catching light).
 
-### Web preview blank screen
-Web preview often shows white during Clerk loading — normal. App works via Expo Go on mobile.
-`ClerkLoaded` wrapper prevents render until Clerk initializes.
+### useClerkSafe hooks
+All tab screens must use `useUserSafe` / `useAuthSafe` from `hooks/useClerkSafe.ts` instead of direct Clerk hooks to avoid crashes when Clerk is unavailable.
 
 ## File Map
-- `app/_layout.tsx` — Root layout with all providers (ClerkProvider, PlayerProvider, PlaylistProvider, StatsProvider, LibraryProvider)
+- `app/_layout.tsx` — Root layout with all providers
 - `app/(tabs)/_layout.tsx` — 5-tab layout with custom tab bar (MiniPlayer above tabs)
+- `components/ScreenBackground.tsx` — Earth ImageBackground + dark overlay
+- `components/GlassCard.tsx` — Premium glass card with blur, shine, per-side borders
+- `components/GlassIcon.tsx` — Glass icon button (circle/rounded container)
+- `components/MiniPlayer.tsx` — Glass mini player with progress bar
+- `components/TrackCard.tsx` — Track row with glass icon buttons
 - `contexts/PlaylistContext.tsx` — Playlist CRUD with AsyncStorage
 - `contexts/StatsContext.tsx` — Listening stats (plays, minutes, top genre)
 - `contexts/PlayerContext.tsx` — Audio player with queue, shuffle, repeat, recentlyPlayed
-- `components/AddToPlaylistModal.tsx` — Bottom sheet to add tracks to playlists
-- `app/player.tsx` — Full-screen player with blur BG, seek bar, shuffle/repeat
-- `app/queue.tsx` — Queue management screen
-- `app/settings.tsx` — App settings with AsyncStorage persistence
-- `app/playlist/create.tsx` — Create playlist modal
-- `app/playlist/[id].tsx` — Playlist detail with track management
-- `assets/images/beatstream-logo.png` — Beatstream logo (used in auth screens)
+- `app/player.tsx` — Full-screen player, earth bg + artwork blur overlay
+- `assets/images/earth-bg.jpg` — Space/earth photo background
+- `assets/images/beatstream-logo.png` — Beatstream logo

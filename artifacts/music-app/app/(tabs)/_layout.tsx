@@ -24,28 +24,25 @@ function CustomTabBar(props: any) {
 
 function TabsContent() {
   const isIOS = Platform.OS === "ios";
-  const isWeb = Platform.OS === "web";
 
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#A78BFA",
-        tabBarInactiveTintColor: "rgba(255,255,255,0.4)",
+        tabBarActiveTintColor: "#FFFFFF",
+        tabBarInactiveTintColor: "rgba(255,255,255,0.35)",
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: isIOS ? "transparent" : "#0E0E1A",
+          backgroundColor: isIOS ? "transparent" : "rgba(5,5,15,0.92)",
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: "rgba(255,255,255,0.08)",
           elevation: 0,
-          ...(isWeb ? { height: 70 } : {}),
+          ...(Platform.OS === "web" ? { height: 70 } : {}),
         },
         tabBarBackground: () =>
           isIOS ? (
-            <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
-          ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: "#0E0E1A" }]} />
+            <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
           ) : null,
         tabBarLabelStyle: {
           fontSize: 10,
@@ -79,7 +76,7 @@ function TabsContent() {
       <Tabs.Screen
         name="favorites"
         options={{
-          title: "Favorites",
+          title: "Liked",
           tabBarIcon: ({ color }) => <Feather name="heart" size={22} color={color} />,
         }}
       />
@@ -100,7 +97,7 @@ function TabLayoutWithClerk() {
 
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#08080F" }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#02040C" }}>
         <ActivityIndicator size="large" color="#7C3AED" />
       </View>
     );

@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  ImageBackground,
   Platform,
   Pressable,
   StyleSheet,
@@ -21,33 +22,23 @@ import Animated, {
 } from "react-native-reanimated";
 
 import AddToPlaylistModal from "@/components/AddToPlaylistModal";
+import GlassCard from "@/components/GlassCard";
+import GlassIcon from "@/components/GlassIcon";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useStats } from "@/contexts/StatsContext";
 import { formatDuration } from "@/data/tracks";
-import { useColors } from "@/hooks/useColors";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const ARTWORK_SIZE = Math.min(SCREEN_WIDTH - 64, 340);
+const ARTWORK_SIZE = Math.min(SCREEN_WIDTH - 64, 320);
+const earthBg = require("../assets/images/earth-bg.jpg");
 
 export default function PlayerScreen() {
-  const colors = useColors();
   const insets = useSafeAreaInsets();
   const {
-    currentTrack,
-    isPlaying,
-    position,
-    duration,
-    isLoading,
-    togglePlayPause,
-    playNext,
-    playPrev,
-    seekTo,
-    isShuffled,
-    toggleShuffle,
-    repeatMode,
-    cycleRepeat,
-    queue,
+    currentTrack, isPlaying, position, duration, isLoading,
+    togglePlayPause, playNext, playPrev, seekTo,
+    isShuffled, toggleShuffle, repeatMode, cycleRepeat, queue,
   } = usePlayer();
   const { isFavorite, toggleFavorite } = useLibrary();
   const { recordPlay } = useStats();
@@ -59,10 +50,7 @@ export default function PlayerScreen() {
   const artworkScale = useSharedValue(1);
 
   useEffect(() => {
-    artworkScale.value = withSpring(isPlaying ? 1 : 0.88, {
-      damping: 15,
-      stiffness: 100,
-    });
+    artworkScale.value = withSpring(isPlaying ? 1 : 0.88, { damping: 15, stiffness: 100 });
   }, [isPlaying]);
 
   useEffect(() => {
@@ -83,91 +71,88 @@ export default function PlayerScreen() {
   const progressRatio = duration > 0 ? position / duration : 0;
   const liked = isFavorite(currentTrack.id);
 
-  const repeatColor =
-    repeatMode !== "none" ? "#A78BFA" : colors.mutedForeground;
-
   return (
-    <View style={[styles.container, { backgroundColor: "#08080F" }]}>
-      {/* Background blur from artwork */}
+    <View style={styles.container}>
+      {/* Earth bg + artwork blur overlay */}
+      <ImageBackground source={earthBg} style={StyleSheet.absoluteFill} resizeMode="cover" />
       <Image
         source={currentTrack.artwork}
-        style={styles.bgArt}
+        style={[StyleSheet.absoluteFill, { opacity: 0.18 }]}
         contentFit="cover"
-        blurRadius={40}
+        blurRadius={35}
       />
       <LinearGradient
-        colors={["rgba(8,8,15,0.55)", "rgba(8,8,15,0.88)", "#08080F"]}
+        colors={["rgba(2,4,12,0.55)", "rgba(2,4,12,0.80)", "rgba(2,4,12,0.97)"]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 0.65 }}
+        end={{ x: 0.5, y: 0.7 }}
       />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <Pressable
+        <GlassIcon
+          name="chevron-down"
+          size={22}
+          containerSize={44}
           onPress={() => router.back()}
-          hitSlop={12}
-          style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.6 }]}
-        >
-          <Feather name="chevron-down" size={28} color="#fff" />
-        </Pressable>
+        />
         <View style={styles.headerCenter}>
           <Text style={styles.headerLabel}>NOW PLAYING</Text>
           {currentTrack.album ? (
             <Text style={styles.headerAlbum} numberOfLines={1}>{currentTrack.album}</Text>
           ) : null}
         </View>
-        <Pressable
-          hitSlop={12}
+        <GlassIcon
+          name="more-horizontal"
+          size={20}
+          containerSize={44}
           onPress={() => setShowPlaylistModal(true)}
-          style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.6 }]}
-        >
-          <Feather name="more-horizontal" size={24} color="#fff" />
-        </Pressable>
+        />
       </View>
 
       {/* Artwork */}
       <View style={styles.artworkContainer}>
         <Animated.View style={[artworkStyle, styles.artworkShadow]}>
-          <Image
-            source={currentTrack.artwork}
-            style={[styles.artwork, { width: ARTWORK_SIZE, height: ARTWORK_SIZE }]}
-            contentFit="cover"
-          />
+          <GlassCard style={styles.artworkFrame} intensity={0} shine>
+            <Image
+              source={currentTrack.artwork}
+              style={{ width: ARTWORK_SIZE, height: ARTWORK_SIZE, borderRadius: 22 }}
+              contentFit="cover"
+            />
+          </GlassCard>
         </Animated.View>
       </View>
 
       {/* Body */}
       <View style={styles.body}>
-        {/* Track info + like */}
+        {/* Track info */}
         <View style={styles.trackInfo}>
           <View style={styles.trackInfoText}>
             <Text style={styles.trackTitle} numberOfLines={1}>{currentTrack.title}</Text>
             <Text style={styles.trackArtist} numberOfLines={1}>{currentTrack.artist}</Text>
           </View>
-          <Pressable
+          <GlassIcon
+            name="heart"
+            size={22}
+            containerSize={46}
+            active={liked}
+            color={liked ? "#A78BFA" : "rgba(255,255,255,0.5)"}
             onPress={() => toggleFavorite(currentTrack)}
-            hitSlop={10}
-            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-          >
-            <Feather name="heart" size={26} color={liked ? "#A78BFA" : "rgba(255,255,255,0.4)"} />
-          </Pressable>
+          />
         </View>
 
         {/* Seek bar */}
         <View style={styles.seekerContainer}>
           <View
-            style={[styles.seekBarTrack, { backgroundColor: "rgba(255,255,255,0.15)" }]}
+            style={styles.seekBarTrack}
             onStartShouldSetResponder={() => true}
             onMoveShouldSetResponder={() => true}
             onResponderGrant={(e) => {
               setIsSeeking(true);
-              const ratio = e.nativeEvent.locationX / (SCREEN_WIDTH - 64);
-              setSeekPosition(Math.max(0, Math.min(1, ratio)));
+              setSeekPosition(Math.max(0, Math.min(1, e.nativeEvent.locationX / (SCREEN_WIDTH - 64))));
             }}
             onResponderMove={(e) => {
-              const ratio = e.nativeEvent.locationX / (SCREEN_WIDTH - 64);
-              setSeekPosition(Math.max(0, Math.min(1, ratio)));
+              setSeekPosition(Math.max(0, Math.min(1, e.nativeEvent.locationX / (SCREEN_WIDTH - 64))));
             }}
             onResponderRelease={() => {
               seekTo(seekPosition * duration);
@@ -175,22 +160,10 @@ export default function PlayerScreen() {
             }}
           >
             <View
-              style={[
-                styles.seekBarFill,
-                {
-                  backgroundColor: "#A78BFA",
-                  width: `${(isSeeking ? seekPosition : progressRatio) * 100}%`,
-                },
-              ]}
+              style={[styles.seekBarFill, { width: `${(isSeeking ? seekPosition : progressRatio) * 100}%` }]}
             />
             <View
-              style={[
-                styles.seekHandle,
-                {
-                  backgroundColor: "#fff",
-                  left: `${(isSeeking ? seekPosition : progressRatio) * 100}%`,
-                },
-              ]}
+              style={[styles.seekHandle, { left: `${(isSeeking ? seekPosition : progressRatio) * 100}%` }]}
             />
           </View>
           <View style={styles.seekTimes}>
@@ -201,79 +174,75 @@ export default function PlayerScreen() {
 
         {/* Controls */}
         <View style={styles.controls}>
-          <Pressable
+          <GlassIcon
+            name="shuffle"
+            size={20}
+            containerSize={44}
+            active={isShuffled}
             onPress={toggleShuffle}
-            hitSlop={10}
-            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-          >
-            <Feather
-              name="shuffle"
-              size={22}
-              color={isShuffled ? "#A78BFA" : "rgba(255,255,255,0.45)"}
-            />
-          </Pressable>
-
-          <Pressable
+          />
+          <GlassIcon
+            name="skip-back"
+            size={26}
+            containerSize={52}
             onPress={playPrev}
-            hitSlop={10}
-            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-          >
-            <Feather name="skip-back" size={34} color="#fff" />
-          </Pressable>
+          />
 
+          {/* Play button */}
           <Pressable
-            style={styles.playButton}
+            style={({ pressed }) => [styles.playButton, pressed && { opacity: 0.8 }]}
             onPress={togglePlayPause}
           >
+            <LinearGradient
+              colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0.06)", "rgba(255,255,255,0.02)"]}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+            />
             {isLoading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Feather name={isPlaying ? "pause" : "play"} size={30} color="#fff" style={{ paddingLeft: isPlaying ? 0 : 2 }} />
+              <Feather
+                name={isPlaying ? "pause" : "play"}
+                size={30}
+                color="#fff"
+                style={{ marginLeft: isPlaying ? 0 : 3 }}
+              />
             )}
           </Pressable>
 
-          <Pressable
+          <GlassIcon
+            name="skip-forward"
+            size={26}
+            containerSize={52}
             onPress={playNext}
-            hitSlop={10}
-            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-          >
-            <Feather name="skip-forward" size={34} color="#fff" />
-          </Pressable>
-
-          <Pressable
+          />
+          <GlassIcon
+            name="repeat"
+            size={20}
+            containerSize={44}
+            active={repeatMode !== "none"}
             onPress={cycleRepeat}
-            hitSlop={10}
-            style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-          >
-            <View>
-              <Feather
-                name={repeatMode === "one" ? "repeat" : "repeat"}
-                size={22}
-                color={repeatColor}
-              />
-              {repeatMode === "one" && (
-                <View style={styles.repeatOneDot} />
-              )}
-            </View>
-          </Pressable>
+          />
         </View>
 
         {/* Bottom actions */}
-        <View style={[styles.bottomActions, { paddingBottom: insets.bottom + 20 }]}>
+        <View style={[styles.bottomActions, { paddingBottom: insets.bottom + 16 }]}>
           <Pressable
             onPress={() => setShowPlaylistModal(true)}
             style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.65 }]}
           >
-            <Feather name="plus-circle" size={20} color="rgba(255,255,255,0.55)" />
+            <GlassIcon name="plus-circle" size={18} containerSize={38} />
             <Text style={styles.actionLabel}>Add to Playlist</Text>
           </Pressable>
-
           <Pressable
             onPress={() => router.push("/queue")}
             style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.65 }]}
           >
-            <Feather name="list" size={20} color="rgba(255,255,255,0.55)" />
-            <Text style={styles.actionLabel}>Queue {queue.length > 0 ? `(${queue.length})` : ""}</Text>
+            <GlassIcon name="list" size={18} containerSize={38} />
+            <Text style={styles.actionLabel}>
+              Queue {queue.length > 0 ? `(${queue.length})` : ""}
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -289,145 +258,101 @@ export default function PlayerScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  bgArt: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.4,
-  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 10,
   },
-  headerBtn: { width: 40, alignItems: "center" },
   headerCenter: { flex: 1, alignItems: "center" },
   headerLabel: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
-    color: "rgba(255,255,255,0.5)",
+    color: "rgba(255,255,255,0.45)",
     letterSpacing: 1.5,
     textTransform: "uppercase",
   },
   headerAlbum: {
     fontSize: 13,
     fontFamily: "Inter_500Medium",
-    color: "rgba(255,255,255,0.7)",
+    color: "rgba(255,255,255,0.65)",
     marginTop: 3,
     maxWidth: 200,
   },
-  artworkContainer: {
-    alignItems: "center",
-    paddingHorizontal: 32,
-    paddingVertical: 8,
-  },
+  artworkContainer: { alignItems: "center", paddingHorizontal: 32, paddingVertical: 12 },
   artworkShadow: {
-    shadowColor: "#7C3AED",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    elevation: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.7,
+    shadowRadius: 30,
+    elevation: 20,
   },
-  artwork: {
-    borderRadius: 20,
-    backgroundColor: "#1C1C2A",
+  artworkFrame: {
+    borderRadius: 24,
+    overflow: "hidden",
+    width: ARTWORK_SIZE,
+    height: ARTWORK_SIZE,
   },
-  body: {
-    flex: 1,
-    paddingHorizontal: 32,
-    paddingTop: 12,
-    gap: 24,
-  },
-  trackInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
+  body: { flex: 1, paddingHorizontal: 32, paddingTop: 8, gap: 22 },
+  trackInfo: { flexDirection: "row", alignItems: "center", gap: 14 },
   trackInfoText: { flex: 1, gap: 5 },
-  trackTitle: {
-    fontSize: 22,
-    fontFamily: "Inter_700Bold",
-    color: "#fff",
-  },
-  trackArtist: {
-    fontSize: 16,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.6)",
-  },
+  trackTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#fff" },
+  trackArtist: { fontSize: 15, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.55)" },
   seekerContainer: { gap: 10 },
   seekBarTrack: {
-    height: 5,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.12)",
     position: "relative",
   },
   seekBarFill: {
-    height: 5,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.85)",
     position: "absolute",
     left: 0,
     top: 0,
   },
   seekHandle: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#fff",
     position: "absolute",
-    top: -5.5,
-    marginLeft: -8,
+    top: -5,
+    marginLeft: -7,
     shadowColor: "#fff",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
     elevation: 4,
   },
-  seekTimes: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  seekTime: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.45)",
-  },
-  controls: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+  seekTimes: { flexDirection: "row", justifyContent: "space-between" },
+  seekTime: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.4)" },
+  controls: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   playButton: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "#7C3AED",
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.28)",
+    borderLeftColor: "rgba(255,255,255,0.16)",
+    borderRightColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: "rgba(255,255,255,0.04)",
+    backgroundColor: "rgba(20,20,35,0.6)",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#7C3AED",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.55,
-    shadowRadius: 16,
-    elevation: 10,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: { shadowColor: "#fff", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.15, shadowRadius: 20 },
+      android: { elevation: 10 },
+    }),
   },
-  repeatOneDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: "#A78BFA",
-    position: "absolute",
-    bottom: -5,
-    alignSelf: "center",
-  },
-  bottomActions: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 32,
-  },
-  actionBtn: {
-    alignItems: "center",
-    gap: 6,
-  },
-  actionLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
-    color: "rgba(255,255,255,0.45)",
-  },
+  bottomActions: { flexDirection: "row", justifyContent: "center", gap: 36 },
+  actionBtn: { alignItems: "center", gap: 8 },
+  actionLabel: { fontSize: 11, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.4)" },
 });

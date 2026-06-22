@@ -1,6 +1,5 @@
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -17,6 +16,7 @@ import {
 } from "react-native";
 
 import GlassCard from "@/components/GlassCard";
+import GlassIcon from "@/components/GlassIcon";
 import ScreenBackground from "@/components/ScreenBackground";
 import TrackCard from "@/components/TrackCard";
 import { fetchJamendoTracks, searchJamendoTracks, Track, FEATURED_GENRES } from "@/data/tracks";
@@ -24,18 +24,7 @@ import { fetchJamendoTracks, searchJamendoTracks, Track, FEATURED_GENRES } from 
 const HISTORY_KEY = "beatstream_search_history";
 const MAX_HISTORY = 10;
 
-const GENRE_COLORS: Record<string, string> = {
-  electronic: "#7C3AED",
-  rock: "#E8632A",
-  jazz: "#0EA5E9",
-  ambient: "#10B981",
-  classical: "#F59E0B",
-  hiphop: "#EF4444",
-  pop: "#EC4899",
-  folk: "#84CC16",
-};
-
-const GENRE_ICONS: Record<string, string> = {
+const GENRE_ICONS: Record<string, React.ComponentProps<typeof Feather>["name"]> = {
   electronic: "zap",
   rock: "radio",
   jazz: "music",
@@ -48,35 +37,40 @@ const GENRE_ICONS: Record<string, string> = {
 
 function GenreGrid({ onSelect }: { onSelect: (genre: string) => void }) {
   return (
-    <View style={ggSt.grid}>
+    <View style={gg.grid}>
       {FEATURED_GENRES.map((g) => (
         <Pressable
           key={g.id}
           onPress={() => onSelect(g.label)}
-          style={[ggSt.card, { backgroundColor: GENRE_COLORS[g.id] ?? "#7C3AED" }]}
+          style={({ pressed }) => [gg.item, pressed && { opacity: 0.7 }]}
         >
-          <LinearGradient
-            colors={["rgba(255,255,255,0.15)", "transparent"]}
-            style={StyleSheet.absoluteFill}
-          />
-          <Feather name={(GENRE_ICONS[g.id] as any) ?? "music"} size={22} color="rgba(255,255,255,0.9)" />
-          <Text style={ggSt.label}>{g.label}</Text>
+          <GlassCard style={gg.card} intensity={65} shine>
+            <GlassIcon
+              name={GENRE_ICONS[g.id] ?? "music"}
+              size={22}
+              containerSize={44}
+              color="rgba(255,255,255,0.8)"
+            />
+            <Text style={gg.label}>{g.label}</Text>
+          </GlassCard>
         </Pressable>
       ))}
     </View>
   );
 }
-const ggSt = StyleSheet.create({
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+
+const gg = StyleSheet.create({
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  item: { width: "47%" },
   card: {
-    width: "47%",
-    height: 76,
-    borderRadius: 12,
-    padding: 14,
-    justifyContent: "space-between",
-    overflow: "hidden",
+    height: 80,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
   },
-  label: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#fff" },
+  label: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#fff" },
 });
 
 export default function SearchScreen() {
@@ -86,7 +80,7 @@ export default function SearchScreen() {
   const [query, setQuery] = useState(genreParam ?? "");
   const [results, setResults] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(!!genreParam);
+  const [searched, setSearched] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const topPad = Platform.OS === "web" ? 60 : insets.top;
@@ -98,9 +92,7 @@ export default function SearchScreen() {
   }, []);
 
   useEffect(() => {
-    if (genreParam) {
-      handleSearch(genreParam);
-    }
+    if (genreParam) handleSearch(genreParam);
   }, [genreParam]);
 
   const saveHistory = async (q: string) => {
@@ -113,9 +105,11 @@ export default function SearchScreen() {
 
   const handleSearch = useCallback(async (q: string) => {
     if (!q.trim()) { setResults([]); setSearched(false); return; }
-    setLoading(true); setSearched(true);
+    setLoading(true);
+    setSearched(true);
     try {
-      setResults(await searchJamendoTracks(q.trim()));
+      const res = await searchJamendoTracks(q.trim());
+      setResults(res);
       await saveHistory(q.trim());
     } catch { setResults([]); }
     finally { setLoading(false); }
@@ -128,9 +122,7 @@ export default function SearchScreen() {
   };
 
   const clearSearch = () => {
-    setQuery("");
-    setResults([]);
-    setSearched(false);
+    setQuery(""); setResults([]); setSearched(false);
     inputRef.current?.focus();
   };
 
@@ -146,17 +138,16 @@ export default function SearchScreen() {
   };
 
   return (
-    <ScreenBackground accent="#1A0A4A">
-      {/* Fixed search header */}
+    <ScreenBackground>
       <View style={[st.header, { paddingTop: topPad + 16 }]}>
         <Text style={st.pageTitle}>Search</Text>
-        <GlassCard style={st.searchBar} intensity={40}>
-          <Feather name="search" size={18} color="rgba(255,255,255,0.5)" style={{ marginLeft: 14 }} />
+        <GlassCard style={st.searchBar} intensity={65} shine>
+          <Feather name="search" size={17} color="rgba(255,255,255,0.4)" style={{ marginLeft: 14 }} />
           <TextInput
             ref={inputRef}
             style={st.input}
             placeholder="Artists, songs, genres..."
-            placeholderTextColor="rgba(255,255,255,0.35)"
+            placeholderTextColor="rgba(255,255,255,0.25)"
             value={query}
             onChangeText={handleChangeText}
             returnKeyType="search"
@@ -165,16 +156,16 @@ export default function SearchScreen() {
             autoCorrect={false}
           />
           {query.length > 0 && (
-            <Pressable onPress={clearSearch} hitSlop={8} style={{ marginRight: 14 }}>
-              <Feather name="x" size={18} color="rgba(255,255,255,0.5)" />
-            </Pressable>
+            <View style={{ marginRight: 10 }}>
+              <GlassIcon name="x" size={14} containerSize={28} onPress={clearSearch} />
+            </View>
           )}
         </GlassCard>
       </View>
 
       {loading ? (
         <View style={st.centered}>
-          <ActivityIndicator color="#A78BFA" size="large" />
+          <ActivityIndicator color="rgba(255,255,255,0.6)" size="large" />
           <Text style={st.loadingText}>Searching...</Text>
         </View>
       ) : searched ? (
@@ -183,15 +174,17 @@ export default function SearchScreen() {
           keyExtractor={(t) => t.id}
           renderItem={({ item }) => <TrackCard track={item} queue={results} />}
           ListHeaderComponent={
-            <Text style={[st.sectionLabel, { paddingHorizontal: 16, paddingTop: 4 }]}>
-              {results.length > 0 ? `${results.length} results for "${query}"` : "No results found"}
+            <Text style={[st.resultLabel, { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 }]}>
+              {results.length > 0
+                ? `${results.length} results for "${query}"`
+                : "No results found"}
             </Text>
           }
           ListEmptyComponent={
             <View style={st.emptyState}>
-              <Feather name="search" size={48} color="rgba(255,255,255,0.15)" />
+              <GlassIcon name="search" size={28} containerSize={72} borderRadius={36} />
               <Text style={st.emptyTitle}>No results found</Text>
-              <Text style={st.emptyText}>Try a different search term or explore a genre</Text>
+              <Text style={st.emptyText}>Try a different search term or browse genres</Text>
             </View>
           }
           contentContainerStyle={{ paddingBottom: 140, paddingTop: 4 }}
@@ -203,36 +196,37 @@ export default function SearchScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Search history */}
           {history.length > 0 && (
-            <View style={{ marginBottom: 24 }}>
-              <View style={st.historyHeader}>
+            <View style={{ marginBottom: 28 }}>
+              <View style={st.rowBetween}>
                 <Text style={st.sectionTitle}>Recent Searches</Text>
                 <Pressable onPress={clearHistory} hitSlop={8}>
                   <Text style={st.clearAll}>Clear all</Text>
                 </Pressable>
               </View>
-              {history.map((item) => (
-                <Pressable
-                  key={item}
-                  style={({ pressed }) => [st.historyRow, pressed && { opacity: 0.65 }]}
-                  onPress={() => { setQuery(item); handleSearch(item); }}
-                >
-                  <Feather name="clock" size={16} color="rgba(255,255,255,0.4)" />
-                  <Text style={st.historyText}>{item}</Text>
-                  <Pressable onPress={() => removeHistoryItem(item)} hitSlop={8}>
-                    <Feather name="x" size={16} color="rgba(255,255,255,0.3)" />
+              <GlassCard style={{ borderRadius: 16, paddingHorizontal: 14, paddingBottom: 4 }} intensity={60} shine>
+                {history.map((item) => (
+                  <Pressable
+                    key={item}
+                    style={({ pressed }) => [st.historyRow, pressed && { opacity: 0.65 }]}
+                    onPress={() => { setQuery(item); handleSearch(item); }}
+                  >
+                    <GlassIcon name="clock" size={14} containerSize={28} />
+                    <Text style={st.historyText}>{item}</Text>
+                    <GlassIcon
+                      name="x"
+                      size={12}
+                      containerSize={24}
+                      onPress={() => removeHistoryItem(item)}
+                    />
                   </Pressable>
-                </Pressable>
-              ))}
+                ))}
+              </GlassCard>
             </View>
           )}
 
-          {/* Browse genres */}
-          <Text style={st.sectionTitle}>Browse Genres</Text>
-          <View style={{ marginTop: 12 }}>
-            <GenreGrid onSelect={(g) => { setQuery(g); handleSearch(g); }} />
-          </View>
+          <Text style={[st.sectionTitle, { marginBottom: 14 }]}>Browse Genres</Text>
+          <GenreGrid onSelect={(g) => { setQuery(g); handleSearch(g); }} />
         </ScrollView>
       )}
     </ScreenBackground>
@@ -240,13 +234,13 @@ export default function SearchScreen() {
 }
 
 const st = StyleSheet.create({
-  header: { paddingHorizontal: 16, paddingBottom: 12, gap: 14 },
+  header: { paddingHorizontal: 16, paddingBottom: 14, gap: 14 },
   pageTitle: { fontSize: 30, fontFamily: "Inter_700Bold", color: "#fff" },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 14,
-    height: 50,
+    borderRadius: 16,
+    height: 52,
     gap: 8,
   },
   input: {
@@ -256,22 +250,12 @@ const st = StyleSheet.create({
     color: "#fff",
     padding: 0,
   },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 14 },
   loadingText: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.4)" },
-  sectionLabel: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-    color: "rgba(255,255,255,0.5)",
-    marginBottom: 8,
-  },
+  resultLabel: { fontSize: 13, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.45)" },
   sectionTitle: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#fff" },
-  historyHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  clearAll: { fontSize: 13, fontFamily: "Inter_500Medium", color: "#A78BFA" },
+  rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  clearAll: { fontSize: 13, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.45)" },
   historyRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -280,13 +264,13 @@ const st = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(255,255,255,0.06)",
   },
-  historyText: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", color: "#fff" },
-  emptyState: { alignItems: "center", paddingVertical: 60, gap: 12 },
+  historyText: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular", color: "#fff" },
+  emptyState: { alignItems: "center", paddingVertical: 60, gap: 14 },
   emptyTitle: { fontSize: 20, fontFamily: "Inter_700Bold", color: "#fff" },
   emptyText: {
     fontSize: 14,
     fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.45)",
+    color: "rgba(255,255,255,0.4)",
     textAlign: "center",
     paddingHorizontal: 40,
     lineHeight: 22,

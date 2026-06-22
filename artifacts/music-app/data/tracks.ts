@@ -32,10 +32,6 @@ function getBaseUrl(): string {
   return domain ? `https://${domain}` : "";
 }
 
-function useProxy(): boolean {
-  return true;
-}
-
 export function mapJamendoTrack(t: JamendoTrack): Track {
   return {
     id: t.id,
@@ -60,25 +56,25 @@ export async function fetchJamendoTracks(
     ...params,
   };
 
-  let url: string;
-  if (useProxy()) {
-    const query = new URLSearchParams(queryParams);
-    url = `${getBaseUrl()}/api/jamendo/tracks?${query}`;
-  } else {
-    const query = new URLSearchParams({
-      client_id: CLIENT_ID,
-      ...queryParams,
-    });
-    url = `${JAMENDO_BASE}/tracks/?${query}`;
-  }
+  const query = new URLSearchParams(queryParams);
+  const baseUrl = getBaseUrl();
+  const url = baseUrl
+    ? `${baseUrl}/api/jamendo/tracks?${query}`
+    : `${JAMENDO_BASE}/tracks/?${new URLSearchParams({ client_id: CLIENT_ID, ...queryParams })}`;
 
-  const res = await fetch(url);
-  const data = await res.json();
-  return (data.results as JamendoTrack[]).map(mapJamendoTrack);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.results || !Array.isArray(data.results)) return [];
+    return (data.results as JamendoTrack[]).map(mapJamendoTrack);
+  } catch {
+    return [];
+  }
 }
 
 export async function searchJamendoTracks(query: string): Promise<Track[]> {
-  return fetchJamendoTracks({ search: query });
+  return fetchJamendoTracks({ search: query, limit: "30" });
 }
 
 export async function fetchTracksByTag(tag: string): Promise<Track[]> {
