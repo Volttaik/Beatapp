@@ -19,34 +19,29 @@ import GlassCard from "@/components/GlassCard";
 import GlassIcon from "@/components/GlassIcon";
 import ScreenBackground from "@/components/ScreenBackground";
 import TrackCard from "@/components/TrackCard";
-import { fetchJamendoTracks, searchJamendoTracks, Track, FEATURED_GENRES } from "@/data/tracks";
+import {
+  searchFreetouseTracks,
+  fetchFreetouseCategoryTracks,
+  Track,
+  FEATURED_GENRES,
+  GENRE_CATEGORY_ICONS,
+} from "@/data/tracks";
 
 const HISTORY_KEY = "beatstream_search_history";
 const MAX_HISTORY = 10;
 
-const GENRE_ICONS: Record<string, React.ComponentProps<typeof Feather>["name"]> = {
-  electronic: "zap",
-  rock: "radio",
-  jazz: "music",
-  ambient: "wind",
-  classical: "award",
-  hiphop: "mic",
-  pop: "star",
-  folk: "feather",
-};
-
-function GenreGrid({ onSelect }: { onSelect: (genre: string) => void }) {
+function GenreGrid({ onSelect }: { onSelect: (id: string, label: string) => void }) {
   return (
     <View style={gg.grid}>
       {FEATURED_GENRES.map((g) => (
         <Pressable
           key={g.id}
-          onPress={() => onSelect(g.label)}
+          onPress={() => onSelect(g.id, g.label)}
           style={({ pressed }) => [gg.item, pressed && { opacity: 0.7 }]}
         >
           <GlassCard style={gg.card} intensity={65} shine>
             <GlassIcon
-              name={GENRE_ICONS[g.id] ?? "music"}
+              name={(GENRE_CATEGORY_ICONS[g.id] ?? "music") as any}
               size={22}
               containerSize={44}
               color="rgba(255,255,255,0.8)"
@@ -92,7 +87,7 @@ export default function SearchScreen() {
   }, []);
 
   useEffect(() => {
-    if (genreParam) handleSearch(genreParam);
+    if (genreParam) handleTextSearch(genreParam);
   }, [genreParam]);
 
   const saveHistory = async (q: string) => {
@@ -103,26 +98,53 @@ export default function SearchScreen() {
     await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(updated)).catch(() => {});
   };
 
-  const handleSearch = useCallback(async (q: string) => {
-    if (!q.trim()) { setResults([]); setSearched(false); return; }
+  const handleTextSearch = useCallback(
+    async (q: string) => {
+      if (!q.trim()) {
+        setResults([]);
+        setSearched(false);
+        return;
+      }
+      setLoading(true);
+      setSearched(true);
+      try {
+        const res = await searchFreetouseTracks(q.trim());
+        setResults(res);
+        await saveHistory(q.trim());
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [history]
+  );
+
+  const handleCategorySearch = useCallback(async (id: string, label: string) => {
+    setQuery(label);
     setLoading(true);
     setSearched(true);
     try {
-      const res = await searchJamendoTracks(q.trim());
+      const res = await fetchFreetouseCategoryTracks(id, { limit: "30" });
       setResults(res);
-      await saveHistory(q.trim());
-    } catch { setResults([]); }
-    finally { setLoading(false); }
-  }, [history]);
+      await saveHistory(label);
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const handleChangeText = (text: string) => {
     setQuery(text);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => handleSearch(text), 600);
+    debounceRef.current = setTimeout(() => handleTextSearch(text), 600);
   };
 
   const clearSearch = () => {
-    setQuery(""); setResults([]); setSearched(false);
+    setQuery("");
+    setResults([]);
+    setSearched(false);
     inputRef.current?.focus();
   };
 
@@ -151,7 +173,7 @@ export default function SearchScreen() {
             value={query}
             onChangeText={handleChangeText}
             returnKeyType="search"
-            onSubmitEditing={() => handleSearch(query)}
+            onSubmitEditing={() => handleTextSearch(query)}
             autoCapitalize="none"
             autoCorrect={false}
           />
@@ -184,7 +206,10 @@ export default function SearchScreen() {
             <View style={st.emptyState}>
               <GlassIcon name="search" size={28} containerSize={72} borderRadius={36} />
               <Text style={st.emptyTitle}>No results found</Text>
-              <Text style={st.emptyText}>Try a different search term or browse genres</Text>
+              <Text style={st.emptyText}>Try a different search term or browse genres below</Text>
+              <View style={{ marginTop: 24, width: "100%", paddingHorizontal: 16 }}>
+                <GenreGrid onSelect={handleCategorySearch} />
+              </View>
             </View>
           }
           contentContainerStyle={{ paddingBottom: 140, paddingTop: 4 }}
@@ -209,16 +234,14 @@ export default function SearchScreen() {
                   <Pressable
                     key={item}
                     style={({ pressed }) => [st.historyRow, pressed && { opacity: 0.65 }]}
-                    onPress={() => { setQuery(item); handleSearch(item); }}
+                    onPress={() => {
+                      setQuery(item);
+                      handleTextSearch(item);
+                    }}
                   >
                     <GlassIcon name="clock" size={14} containerSize={28} />
                     <Text style={st.historyText}>{item}</Text>
-                    <GlassIcon
-                      name="x"
-                      size={12}
-                      containerSize={24}
-                      onPress={() => removeHistoryItem(item)}
-                    />
+                    <GlassIcon name="x" size={12} containerSize={24} onPress={() => removeHistoryItem(item)} />
                   </Pressable>
                 ))}
               </GlassCard>
@@ -226,7 +249,7 @@ export default function SearchScreen() {
           )}
 
           <Text style={[st.sectionTitle, { marginBottom: 14 }]}>Browse Genres</Text>
-          <GenreGrid onSelect={(g) => { setQuery(g); handleSearch(g); }} />
+          <GenreGrid onSelect={handleCategorySearch} />
         </ScrollView>
       )}
     </ScreenBackground>
@@ -254,7 +277,12 @@ const st = StyleSheet.create({
   loadingText: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.4)" },
   resultLabel: { fontSize: 13, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.45)" },
   sectionTitle: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#fff" },
-  rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  rowBetween: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
   clearAll: { fontSize: 13, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.45)" },
   historyRow: {
     flexDirection: "row",
@@ -265,7 +293,7 @@ const st = StyleSheet.create({
     borderBottomColor: "rgba(255,255,255,0.06)",
   },
   historyText: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular", color: "#fff" },
-  emptyState: { alignItems: "center", paddingVertical: 60, gap: 14 },
+  emptyState: { alignItems: "center", paddingVertical: 40, gap: 14 },
   emptyTitle: { fontSize: 20, fontFamily: "Inter_700Bold", color: "#fff" },
   emptyText: {
     fontSize: 14,

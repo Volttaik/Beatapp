@@ -19,7 +19,7 @@ import GlassIcon from "@/components/GlassIcon";
 import ScreenBackground from "@/components/ScreenBackground";
 import TrackCard from "@/components/TrackCard";
 import { usePlayer } from "@/contexts/PlayerContext";
-import { fetchJamendoTracks, Track, FEATURED_GENRES } from "@/data/tracks";
+import { fetchFreetouseTracks, Track } from "@/data/tracks";
 import { useUserSafe } from "@/hooks/useClerkSafe";
 
 type Filter = "All" | "Trending" | "New";
@@ -183,9 +183,9 @@ export default function HomeScreen() {
   const load = async () => {
     try {
       const [t, n, p] = await Promise.all([
-        fetchJamendoTracks({ order: "popularity_month", limit: "20" }),
-        fetchJamendoTracks({ order: "releasedate", limit: "20" }),
-        fetchJamendoTracks({ order: "popularity_total", limit: "20" }),
+        fetchFreetouseTracks({ limit: "20", page: "1" }),
+        fetchFreetouseTracks({ limit: "20", page: "2" }),
+        fetchFreetouseTracks({ limit: "20", page: "3" }),
       ]);
       setTrending(t);
       setNewReleases(n);

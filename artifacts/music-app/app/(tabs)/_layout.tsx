@@ -185,9 +185,10 @@ const bar = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    justifyContent: "space-evenly",
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 16,
+    gap: 22,
+    paddingHorizontal: 20,
     paddingTop: 8,
   },
 });
