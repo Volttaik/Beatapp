@@ -136,8 +136,10 @@ export const searchJamendoTracks = searchFreetouseTracks;
 
 // ── YouTube Music (ytmusicapi) ────────────────────────────────────────────
 
+const YT_MUSIC_SERVICE = "https://beatstream-gateway--lawsanu0.replit.app";
+
 export async function searchYTMusicTracks(query: string, limit = 30): Promise<Track[]> {
-  const url = buildUrl("/ytmusic/search", { q: query, limit: String(limit) });
+  const url = `${YT_MUSIC_SERVICE}/search?q=${encodeURIComponent(query)}&limit=${limit}`;
   try {
     const res = await fetch(url);
     if (!res.ok) return [];
@@ -150,7 +152,7 @@ export async function searchYTMusicTracks(query: string, limit = 30): Promise<Tr
 }
 
 export async function fetchYTMusicTrending(): Promise<Track[]> {
-  const url = buildUrl("/ytmusic/trending");
+  const url = `${YT_MUSIC_SERVICE}/trending`;
   try {
     const res = await fetch(url);
     if (!res.ok) return [];
@@ -163,7 +165,7 @@ export async function fetchYTMusicTrending(): Promise<Track[]> {
 }
 
 export async function fetchYTMusicStreamUrl(videoId: string): Promise<string | null> {
-  const url = buildUrl(`/ytmusic/stream/${videoId}`);
+  const url = `${YT_MUSIC_SERVICE}/stream/${videoId}`;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(35000) });
     if (!res.ok) return null;
