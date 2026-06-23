@@ -136,13 +136,27 @@ export const searchJamendoTracks = searchFreetouseTracks;
 
 // ── YouTube Music (ytmusicapi) ────────────────────────────────────────────
 
-const YT_MUSIC_SERVICE = "https://stephanie-investigate-pixel-starts.trycloudflare.com";
+const YT_MUSIC_SERVICES = [
+  "https://stephanie-investigate-pixel-starts.trycloudflare.com",
+  "https://tend-effectively-promote-abstract.trycloudflare.com",
+];
+
+async function ytFetch(path: string, init?: RequestInit): Promise<Response> {
+  let lastError: unknown;
+  for (const base of YT_MUSIC_SERVICES) {
+    try {
+      const res = await fetch(`${base}${path}`, init);
+      if (res.ok) return res;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError ?? new Error("All YT Music services unavailable");
+}
 
 export async function searchYTMusicTracks(query: string, limit = 30): Promise<Track[]> {
-  const url = `${YT_MUSIC_SERVICE}/search?q=${encodeURIComponent(query)}&limit=${limit}`;
   try {
-    const res = await fetch(url);
-    if (!res.ok) return [];
+    const res = await ytFetch(`/search?q=${encodeURIComponent(query)}&limit=${limit}`);
     const data = await res.json();
     if (!Array.isArray(data?.results)) return [];
     return data.results as Track[];
@@ -152,10 +166,8 @@ export async function searchYTMusicTracks(query: string, limit = 30): Promise<Tr
 }
 
 export async function fetchYTMusicTrending(): Promise<Track[]> {
-  const url = `${YT_MUSIC_SERVICE}/trending`;
   try {
-    const res = await fetch(url);
-    if (!res.ok) return [];
+    const res = await ytFetch("/trending");
     const data = await res.json();
     if (!Array.isArray(data?.results)) return [];
     return data.results as Track[];
@@ -165,10 +177,8 @@ export async function fetchYTMusicTrending(): Promise<Track[]> {
 }
 
 export async function fetchYTMusicStreamUrl(videoId: string): Promise<string | null> {
-  const url = `${YT_MUSIC_SERVICE}/stream/${videoId}`;
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(35000) });
-    if (!res.ok) return null;
+    const res = await ytFetch(`/stream/${videoId}`, { signal: AbortSignal.timeout(35000) });
     const data = await res.json();
     return (data?.url as string) ?? null;
   } catch {
