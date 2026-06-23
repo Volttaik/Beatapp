@@ -79,7 +79,7 @@ function SettingRow({
           value={value}
           onValueChange={onToggle}
           trackColor={{ false: "rgba(255,255,255,0.08)", true: "rgba(124,58,237,0.55)" }}
-          thumbColor={value ? "#A78BFA" : "rgba(255,255,255,0.35)"}
+          thumbColor={value ? "#fff" : "rgba(255,255,255,0.35)"}
           ios_backgroundColor="rgba(255,255,255,0.08)"
         />
       ) : showChevron ? (

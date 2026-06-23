@@ -163,7 +163,7 @@ export default function PlayerScreen() {
               size={22}
               containerSize={46}
               active={liked}
-              color={liked ? "#C4B5FD" : "rgba(255,255,255,0.55)"}
+              color={liked ? "#fff" : "rgba(255,255,255,0.55)"}
               onPress={() => {
                 heartScale.value = withSpring(0.7, { damping: 8, stiffness: 400 }, () => {
                   heartScale.value = withSpring(1.1, { damping: 10, stiffness: 300 }, () => {

@@ -1,9 +1,10 @@
 import os
 import re
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 from ytmusicapi import YTMusic
 import yt_dlp
+import urllib.request
 
 app = Flask(__name__)
 CORS(app)
@@ -55,6 +56,43 @@ def map_result(r):
     }
 
 
+def get_stream_info(video_id):
+    ydl_opts = {
+        "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio",
+        "quiet": True,
+        "no_warnings": True,
+        "socket_timeout": 20,
+        "extractor_args": {"youtube": {"skip": ["hls", "dash"]}},
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(
+            f"https://music.youtube.com/watch?v={video_id}",
+            download=False,
+        )
+        if not info:
+            return None, None, None
+
+        formats = info.get("formats", []) or []
+        audio_only = [
+            f for f in formats
+            if f.get("vcodec") == "none" and f.get("url")
+        ]
+        m4a = [f for f in audio_only if f.get("ext") == "m4a"]
+        webm = [f for f in audio_only if f.get("ext") == "webm"]
+
+        chosen = None
+        if m4a:
+            chosen = sorted(m4a, key=lambda f: f.get("abr") or 0)[-1]
+        elif webm:
+            chosen = sorted(webm, key=lambda f: f.get("abr") or 0)[-1]
+        elif audio_only:
+            chosen = sorted(audio_only, key=lambda f: f.get("abr") or 0)[-1]
+
+        if chosen and chosen.get("url"):
+            return chosen["url"], chosen.get("ext", "m4a"), chosen.get("http_headers", {})
+        return None, None, None
+
+
 @app.route("/search")
 def search():
     q = request.args.get("q", "").strip()
@@ -89,44 +127,54 @@ def trending():
 @app.route("/stream/<video_id>")
 def stream(video_id):
     try:
-        ydl_opts = {
-            "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio",
-            "quiet": True,
-            "no_warnings": True,
-            "socket_timeout": 15,
-            "extractor_args": {"youtube": {"skip": ["hls", "dash"]}},
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(
-                f"https://music.youtube.com/watch?v={video_id}",
-                download=False,
-            )
-            if not info:
-                return jsonify({"error": "No info returned"}), 404
-
-            formats = info.get("formats", []) or []
-            audio_only = [
-                f for f in formats
-                if f.get("vcodec") == "none" and f.get("url")
-            ]
-            m4a = [f for f in audio_only if f.get("ext") == "m4a"]
-            webm = [f for f in audio_only if f.get("ext") == "webm"]
-
-            chosen = None
-            if m4a:
-                chosen = sorted(m4a, key=lambda f: f.get("abr") or 0)[-1]
-            elif webm:
-                chosen = sorted(webm, key=lambda f: f.get("abr") or 0)[-1]
-            elif audio_only:
-                chosen = sorted(audio_only, key=lambda f: f.get("abr") or 0)[-1]
-
-            if chosen and chosen.get("url"):
-                return jsonify({
-                    "url": chosen["url"],
-                    "ext": chosen.get("ext", "unknown"),
-                    "abr": chosen.get("abr"),
-                })
+        url, ext, headers = get_stream_info(video_id)
+        if not url:
             return jsonify({"error": "No audio stream found"}), 404
+        return jsonify({
+            "url": url,
+            "ext": ext or "m4a",
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/download/<video_id>")
+def download(video_id):
+    """Proxy the audio stream so the client doesn't need time-limited CDN URLs."""
+    try:
+        url, ext, extra_headers = get_stream_info(video_id)
+        if not url:
+            return jsonify({"error": "No audio stream found"}), 404
+
+        req_headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; BeatStream/1.0)",
+            "Accept": "*/*",
+        }
+        if extra_headers:
+            req_headers.update(extra_headers)
+
+        req = urllib.request.Request(url, headers=req_headers)
+        remote = urllib.request.urlopen(req, timeout=60)
+
+        content_type = remote.headers.get("Content-Type", f"audio/{ext}")
+        content_length = remote.headers.get("Content-Length")
+
+        resp_headers = {"Content-Type": content_type}
+        if content_length:
+            resp_headers["Content-Length"] = content_length
+        resp_headers["Content-Disposition"] = f'attachment; filename="{video_id}.{ext}"'
+
+        def generate():
+            try:
+                while True:
+                    chunk = remote.read(65536)
+                    if not chunk:
+                        break
+                    yield chunk
+            finally:
+                remote.close()
+
+        return Response(generate(), headers=resp_headers, status=200)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

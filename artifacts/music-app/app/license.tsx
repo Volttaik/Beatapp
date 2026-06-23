@@ -67,7 +67,7 @@ export default function LicenseScreen() {
           onPress={() => Linking.openURL("https://freetouse.com/music-license").catch(() => {})}
         >
           <Text style={styles.linkText}>View full license on freetouse.com</Text>
-          <Feather name="external-link" size={14} color="#A78BFA" />
+          <Feather name="external-link" size={14} color="rgba(255,255,255,0.7)" />
         </Pressable>
       </ScrollView>
     </ScreenBackground>
@@ -81,7 +81,7 @@ function LicenseItem({ icon, text, color }: {
 }) {
   return (
     <View style={styles.licenseItem}>
-      <Feather name={icon} size={14} color={color ?? "#A78BFA"} />
+      <Feather name={icon} size={14} color={color ?? "rgba(255,255,255,0.65)"} />
       <Text style={styles.licenseText}>{text}</Text>
     </View>
   );
@@ -142,6 +142,6 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 14,
     fontFamily: "Inter_500Medium",
-    color: "#A78BFA",
+    color: "rgba(255,255,255,0.65)",
   },
 });

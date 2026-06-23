@@ -1,5 +1,4 @@
 import { Feather } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
@@ -46,9 +45,6 @@ export default function AddToPlaylistModal({ visible, track, onClose }: Props) {
       <View style={styles.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.sheet}>
-          {Platform.OS === "ios" ? (
-            <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-          ) : null}
           <View style={styles.sheetInner}>
             <View style={styles.handle} />
 
@@ -65,13 +61,12 @@ export default function AddToPlaylistModal({ visible, track, onClose }: Props) {
             )}
 
             <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-              {/* Create New Playlist */}
               <Pressable
                 style={({ pressed }) => [styles.playlistRow, pressed && { opacity: 0.65 }]}
                 onPress={handleCreateNew}
               >
                 <View style={styles.newIcon}>
-                  <Feather name="plus" size={20} color="#A78BFA" />
+                  <Feather name="plus" size={20} color="rgba(255,255,255,0.82)" />
                 </View>
                 <Text style={styles.playlistName}>Create New Playlist</Text>
               </Pressable>
@@ -93,7 +88,7 @@ export default function AddToPlaylistModal({ visible, track, onClose }: Props) {
                       <Image source={p.tracks[0].artwork} style={styles.playlistArt} contentFit="cover" />
                     ) : (
                       <View style={styles.playlistArtPlaceholder}>
-                        <Feather name="music" size={16} color="rgba(167,139,250,0.5)" />
+                        <Feather name="music" size={16} color="rgba(255,255,255,0.35)" />
                       </View>
                     )}
                     <View style={styles.playlistInfo}>
@@ -103,7 +98,7 @@ export default function AddToPlaylistModal({ visible, track, onClose }: Props) {
                       </Text>
                     </View>
                     {alreadyAdded && (
-                      <Feather name="check" size={18} color="#A78BFA" />
+                      <Feather name="check" size={18} color="rgba(255,255,255,0.6)" />
                     )}
                   </Pressable>
                 );
@@ -124,30 +119,33 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.7)",
   },
   sheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: "hidden",
-    backgroundColor: Platform.OS === "android" ? "#1A1A2E" : "transparent",
+    backgroundColor: "#111",
     maxHeight: "75%",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.1)",
   },
   sheetInner: {
     padding: 20,
-    backgroundColor: Platform.OS === "ios" ? "rgba(20,10,40,0.7)" : "transparent",
   },
   handle: {
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(255,255,255,0.18)",
     alignSelf: "center",
     marginBottom: 20,
   },
   title: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#fff", marginBottom: 16 },
   trackRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20 },
-  artwork: { width: 44, height: 44, borderRadius: 8, backgroundColor: "#1C1C2A" },
+  artwork: { width: 44, height: 44, borderRadius: 8, backgroundColor: "#1C1C1C" },
   trackInfo: { flex: 1 },
   trackTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#fff" },
   trackArtist: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.5)" },
@@ -164,19 +162,19 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 8,
-    backgroundColor: "rgba(124,58,237,0.2)",
+    backgroundColor: "rgba(255,255,255,0.08)",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(124,58,237,0.4)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.15)",
     borderStyle: "dashed",
   },
-  playlistArt: { width: 48, height: 48, borderRadius: 8, backgroundColor: "#1C1C2A" },
+  playlistArt: { width: 48, height: 48, borderRadius: 8, backgroundColor: "#1C1C1C" },
   playlistArtPlaceholder: {
     width: 48,
     height: 48,
     borderRadius: 8,
-    backgroundColor: "#1C1C2A",
+    backgroundColor: "#1C1C1C",
     alignItems: "center",
     justifyContent: "center",
   },

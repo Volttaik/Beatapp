@@ -94,7 +94,7 @@ export default function RootLayout() {
     return (
       <SafeAreaProvider>
         <View style={{ flex: 1, backgroundColor: "#02040C", alignItems: "center", justifyContent: "center" }}>
-          <ActivityIndicator size="large" color="#7C3AED" />
+          <ActivityIndicator size="large" color="#fff" />
         </View>
       </SafeAreaProvider>
     );

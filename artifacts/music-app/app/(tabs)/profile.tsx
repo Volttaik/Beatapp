@@ -261,7 +261,7 @@ const st = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: "#7C3AED",
+    backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,

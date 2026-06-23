@@ -95,7 +95,7 @@ const MiniPlayer = memo(function MiniPlayer() {
               }}
               hitSlop={10}
             >
-              <Feather name="heart" size={20} color={liked ? "#C4B5FD" : "rgba(255,255,255,0.5)"} />
+              <Feather name="heart" size={20} color={liked ? "#fff" : "rgba(255,255,255,0.5)"} />
             </Pressable>
           </Animated.View>
 
@@ -157,8 +157,7 @@ const st = StyleSheet.create({
     backgroundColor: Platform.OS === "ios" ? "rgba(8,8,8,0.55)" : "transparent",
   },
   topBorder: {
-    height: 0.7,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    height: 0,
   },
   progressBarTrack: {
     height: 2,
@@ -166,7 +165,7 @@ const st = StyleSheet.create({
   },
   progressBarFill: {
     height: 2,
-    backgroundColor: "#C4B5FD",
+    backgroundColor: "#fff",
   },
   inner: {
     flexDirection: "row",

@@ -59,7 +59,7 @@ function QuickCard({ track, queue }: { track: Track; queue: Track[] }) {
       onPress={() => playTrack(track, queue)}
     >
       <Image source={track.artwork || undefined} style={qc.art} contentFit="cover" />
-      <Text style={[qc.title, isActive && { color: "#A78BFA" }]} numberOfLines={2}>
+      <Text style={[qc.title, isActive && { color: "#fff" }]} numberOfLines={2}>
         {track.title}
       </Text>
       {isActive && <View style={qc.activeDot} />}
@@ -70,14 +70,14 @@ function QuickCard({ track, queue }: { track: Track; queue: Track[] }) {
 const qc = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: "#282828",
+    backgroundColor: "#111",
     borderRadius: 6,
     overflow: "hidden",
     flexDirection: "row",
     alignItems: "center",
   },
   cardActive: {
-    backgroundColor: "rgba(124,58,237,0.20)",
+    backgroundColor: "rgba(255,255,255,0.08)",
   },
   art: { width: 54, height: 54 },
   title: {
@@ -91,7 +91,7 @@ const qc = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#A78BFA",
+    backgroundColor: "rgba(255,255,255,0.55)",
     marginRight: 10,
   },
 });
@@ -106,12 +106,12 @@ function RotationRow({ track, queue }: { track: Track; queue: Track[] }) {
     >
       <Image source={track.artwork || undefined} style={rr.art} contentFit="cover" />
       <View style={rr.info}>
-        <Text style={[rr.title, isActive && { color: "#A78BFA" }]} numberOfLines={1}>
+        <Text style={[rr.title, isActive && { color: "#fff" }]} numberOfLines={1}>
           {track.title}
         </Text>
         <Text style={rr.artist} numberOfLines={1}>{track.artist}</Text>
       </View>
-      {isActive && <Feather name="volume-2" size={16} color="#A78BFA" style={{ marginRight: 4 }} />}
+      {isActive && <Feather name="volume-2" size={16} color="rgba(255,255,255,0.82)" style={{ marginRight: 4 }} />}
     </Pressable>
   );
 }
@@ -145,7 +145,7 @@ function RecoCard({ track, queue }: { track: Track; queue: Track[] }) {
           <Feather name="pause" size={20} color="#fff" />
         </View>
       )}
-      <Text style={[rc.title, isActive && { color: "#A78BFA" }]} numberOfLines={2}>
+      <Text style={[rc.title, isActive && { color: "#fff" }]} numberOfLines={2}>
         {track.title}
       </Text>
       <Text style={rc.artist} numberOfLines={1}>{track.artist}</Text>

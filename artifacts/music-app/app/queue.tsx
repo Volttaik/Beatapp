@@ -24,7 +24,7 @@ export default function QueueScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#1C0A3A", "#08080F"]}
+        colors={["#000","#000"]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 0.5 }}
@@ -87,7 +87,7 @@ export default function QueueScreen() {
         </>
       ) : (
         <View style={styles.emptyState}>
-          <Feather name="list" size={48} color="rgba(167,139,250,0.3)" />
+          <Feather name="list" size={48} color="rgba(255,255,255,0.2)" />
           <Text style={styles.emptyTitle}>Queue is empty</Text>
           <Text style={styles.emptyText}>
             Add songs to the queue while browsing
@@ -99,7 +99,7 @@ export default function QueueScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#08080F" },
+  container: { flex: 1, backgroundColor: "#000" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   title: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#fff" },
-  clearText: { fontSize: 14, fontFamily: "Inter_500Medium", color: "#A78BFA" },
+  clearText: { fontSize: 14, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.6)" },
   nowPlayingSection: {
     paddingHorizontal: 20,
     paddingTop: 8,
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#7C3AED",
+    backgroundColor: "rgba(255,255,255,0.18)",
   },
   queueRow: {
     flexDirection: "row",

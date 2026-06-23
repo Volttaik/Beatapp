@@ -8,7 +8,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { Track, fetchYTMusicStreamUrl, isYTMusicTrack, getYTMusicVideoId } from "@/data/tracks";
+import { Track, isYTMusicTrack, getYTMusicVideoId, getYTMusicDownloadUrl } from "@/data/tracks";
 import {
   showDownloadCompleteNotification,
   showDownloadFailedNotification,
@@ -48,12 +48,11 @@ async function ensureDir() {
   }
 }
 
-async function resolveDownloadUrl(track: Track): Promise<string | null> {
+function resolveDownloadUrl(track: Track): string | null {
   if (isYTMusicTrack(track)) {
     const videoId = getYTMusicVideoId(track);
     if (!videoId) return null;
-    const streamUrl = await fetchYTMusicStreamUrl(videoId);
-    return streamUrl ?? null;
+    return getYTMusicDownloadUrl(videoId);
   }
   return track.audioUrl ?? null;
 }
@@ -115,12 +114,12 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
       try {
         await ensureDir();
 
-        const downloadUrl = await resolveDownloadUrl(track);
+        const downloadUrl = resolveDownloadUrl(track);
         if (!downloadUrl) {
           throw new Error("Could not resolve download URL");
         }
 
-        const ext = downloadUrl.includes(".mp3") || downloadUrl.includes("mp3") ? "mp3" : "m4a";
+        const ext = isYTMusicTrack(track) ? "m4a" : "mp3";
         const localUri = `${DOWNLOAD_DIR}${track.id}.${ext}`;
 
         const existingInfo = await FileSystem.getInfoAsync(localUri);
@@ -144,8 +143,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
           localUri,
           {
             headers: {
-              "User-Agent":
-                "Mozilla/5.0 (compatible; BeatStream/1.0)",
+              "User-Agent": "Mozilla/5.0 (compatible; BeatStream/1.0)",
             },
           },
           callback

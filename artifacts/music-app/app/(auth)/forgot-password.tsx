@@ -304,12 +304,12 @@ const styles = StyleSheet.create({
     borderColor: "#2A2A40",
   },
   eyeText: {
-    color: "#7C3AED",
+    color: "rgba(255,255,255,0.75)",
     fontSize: 13,
     fontFamily: "Inter_500Medium",
   },
   primaryBtn: {
-    backgroundColor: "#7C3AED",
+    backgroundColor: "rgba(255,255,255,0.1)",
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: "center",
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   linkText: {
-    color: "#7C3AED",
+    color: "rgba(255,255,255,0.75)",
     fontSize: 14,
     fontFamily: "Inter_500Medium",
     textAlign: "center",

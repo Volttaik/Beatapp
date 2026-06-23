@@ -12,7 +12,7 @@ function AuthLayoutWithClerk() {
   if (!isLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#08080F" }}>
-        <ActivityIndicator size="large" color="#7C3AED" />
+        <ActivityIndicator size="large" color="#fff" />
       </View>
     );
   }
@@ -36,7 +36,7 @@ function AuthLayoutLocal() {
   if (!isLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#08080F" }}>
-        <ActivityIndicator size="large" color="#7C3AED" />
+        <ActivityIndicator size="large" color="#fff" />
       </View>
     );
   }

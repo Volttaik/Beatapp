@@ -36,10 +36,10 @@ function CircularProgress({ progress, size = 32 }: { progress: number; size?: nu
   const filled = circumference * progress;
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <Circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(196,181,253,0.15)" strokeWidth={2} fill="none" />
+      <Circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.12)" strokeWidth={2} fill="none" />
       <Circle
         cx={size / 2} cy={size / 2} r={r}
-        stroke="#C4B5FD" strokeWidth={2} fill="none"
+        stroke="#fff" strokeWidth={2} fill="none"
         strokeDasharray={`${filled} ${circumference - filled}`}
         strokeDashoffset={0}
         strokeLinecap="round"
@@ -88,7 +88,7 @@ function DownloadButton({ track }: { track: Track }) {
         <Feather
           name={downloaded ? "check-circle" : isError ? "alert-circle" : "download"}
           size={18}
-          color={downloaded ? "#C4B5FD" : isError ? "#EF4444" : "rgba(255,255,255,0.35)"}
+          color={downloaded ? "#fff" : isError ? "#EF4444" : "rgba(255,255,255,0.35)"}
         />
       </Pressable>
     </Animated.View>
@@ -145,7 +145,7 @@ const TrackCard = memo(function TrackCard({ track, queue, showIndex }: TrackCard
               )}
             </View>
             <View style={styles.info}>
-              <Text style={[styles.title, isActive && { color: "#C4B5FD" }]} numberOfLines={1}>
+              <Text style={[styles.title, isActive && { color: "#fff" }]} numberOfLines={1}>
                 {track.title}
               </Text>
               <Text style={styles.artist} numberOfLines={1}>{track.artist}</Text>
@@ -166,7 +166,7 @@ const TrackCard = memo(function TrackCard({ track, queue, showIndex }: TrackCard
                 }}
                 hitSlop={8}
               >
-                <Feather name="heart" size={18} color={liked ? "#C4B5FD" : "rgba(255,255,255,0.28)"} />
+                <Feather name="heart" size={18} color={liked ? "#fff" : "rgba(255,255,255,0.28)"} />
               </Pressable>
             </Animated.View>
             <DownloadButton track={track} />
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   containerActive: {
-    backgroundColor: "rgba(196,181,253,0.07)",
+    backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 10,
   },
   left: {

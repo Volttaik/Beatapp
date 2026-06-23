@@ -39,7 +39,7 @@ export default function CreatePlaylistScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#1C0A3A", "#08080F"]}
+        colors={["#000","#000"]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 0.5 }}
@@ -66,7 +66,7 @@ export default function CreatePlaylistScreen() {
         <View style={styles.content}>
           {/* Playlist art placeholder */}
           <View style={styles.artworkPlaceholder}>
-            <Feather name="music" size={48} color="rgba(167,139,250,0.5)" />
+            <Feather name="music" size={48} color="rgba(255,255,255,0.25)" />
           </View>
 
           <View style={styles.form}>
@@ -108,7 +108,7 @@ export default function CreatePlaylistScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#08080F" },
+  container: { flex: 1, backgroundColor: "#000" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -118,13 +118,13 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#fff" },
   createBtn: {
-    backgroundColor: "#7C3AED",
+    backgroundColor: "#fff",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
   },
   createBtnDisabled: { opacity: 0.4 },
-  createBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#fff" },
+  createBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#000" },
   content: { flex: 1, alignItems: "center", paddingHorizontal: 24, paddingTop: 32 },
   artworkPlaceholder: {
     width: 160,

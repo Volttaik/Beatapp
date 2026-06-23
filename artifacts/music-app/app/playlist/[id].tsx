@@ -32,7 +32,7 @@ export default function PlaylistDetailScreen() {
       <View style={[styles.container, { alignItems: "center", justifyContent: "center" }]}>
         <Text style={{ color: "#fff" }}>Playlist not found</Text>
         <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
-          <Text style={{ color: "#A78BFA" }}>Go back</Text>
+          <Text style={{ color: "rgba(255,255,255,0.7)" }}>Go back</Text>
         </Pressable>
       </View>
     );
@@ -75,7 +75,7 @@ export default function PlaylistDetailScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#1C0A3A", "#08080F", "#08080F"]}
+        colors={["#000","#000","#000"]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 0.45 }}
@@ -119,7 +119,7 @@ export default function PlaylistDetailScreen() {
                 <Image source={coverArt} style={styles.coverArt} contentFit="cover" />
               ) : (
                 <View style={styles.coverPlaceholder}>
-                  <Feather name="music" size={56} color="rgba(167,139,250,0.4)" />
+                  <Feather name="music" size={56} color="rgba(255,255,255,0.25)" />
                 </View>
               )}
             </View>
@@ -150,7 +150,7 @@ export default function PlaylistDetailScreen() {
 
             {playlist.tracks.length === 0 && (
               <View style={styles.emptyState}>
-                <Feather name="plus-circle" size={48} color="rgba(167,139,250,0.3)" />
+                <Feather name="plus-circle" size={48} color="rgba(255,255,255,0.2)" />
                 <Text style={styles.emptyTitle}>No songs yet</Text>
                 <Text style={styles.emptyText}>
                   Add songs by tapping ··· on any track
@@ -173,7 +173,7 @@ export default function PlaylistDetailScreen() {
               <Image source={item.artwork} style={styles.artwork} contentFit="cover" />
               <View style={styles.trackInfo}>
                 <Text
-                  style={[styles.trackTitle, isActive && { color: "#A78BFA" }]}
+                  style={[styles.trackTitle, isActive && { color: "#fff" }]}
                   numberOfLines={1}
                 >
                   {item.title}
@@ -196,7 +196,7 @@ export default function PlaylistDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#08080F" },
+  container: { flex: 1, backgroundColor: "#000" },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 16,
-    shadowColor: "#7C3AED",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 20,
@@ -253,16 +253,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: "#7C3AED",
+    backgroundColor: "#fff",
     borderRadius: 30,
     paddingVertical: 14,
-    shadowColor: "#7C3AED",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
   },
-  playAllText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
+  playAllText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#000" },
   tracksLabel: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",

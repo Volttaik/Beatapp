@@ -90,7 +90,7 @@ const wp = StyleSheet.create({
     marginBottom: 8,
   },
   previewSelected: {
-    borderColor: "#A78BFA",
+    borderColor: "rgba(255,255,255,0.3)",
     borderWidth: 2,
   },
   miniUi: { gap: 6 },
@@ -107,7 +107,7 @@ const wp = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#7C3AED",
+    backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -118,7 +118,7 @@ const wp = StyleSheet.create({
     textAlign: "center",
   },
   labelSelected: {
-    color: "#A78BFA",
+    color: "rgba(255,255,255,0.7)",
     fontFamily: "Inter_600SemiBold",
   },
 });
@@ -268,7 +268,7 @@ export default function AppearanceScreen() {
                 <Feather
                   name={customWallpaperUri && wallpaper.id === "custom" ? "refresh-cw" : "image"}
                   size={20}
-                  color="#A78BFA"
+                  color="rgba(255,255,255,0.7)"
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#7C3AED",
+    backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#7C3AED",
+    backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
   },

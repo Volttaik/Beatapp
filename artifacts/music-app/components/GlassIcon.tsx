@@ -19,8 +19,6 @@ interface GlassIconProps {
   active?: boolean;
 }
 
-const ACCENT = "#C4B5FD";
-
 export default function GlassIcon({
   name,
   size = 20,
@@ -38,7 +36,8 @@ export default function GlassIcon({
     transform: [{ scale: scale.value }],
   }));
 
-  const iconColor = active ? ACCENT : color;
+  const iconColor = active ? "#fff" : color;
+  const bgColor = active ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.06)";
 
   const container = (
     <Animated.View
@@ -54,20 +53,17 @@ export default function GlassIcon({
     >
       {Platform.OS === "ios" ? (
         <BlurView
-          intensity={active ? 28 : 20}
+          intensity={active ? 28 : 18}
           tint="dark"
           style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
         />
-      ) : null}
+      ) : (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: "#111", borderRadius: radius }]} />
+      )}
       <View
         style={[
           styles.tint,
-          {
-            borderRadius: radius,
-            backgroundColor: active
-              ? "rgba(196,181,253,0.15)"
-              : "rgba(255,255,255,0.06)",
-          },
+          { borderRadius: radius, backgroundColor: bgColor },
         ]}
       />
       <View style={[styles.border, { borderRadius: radius }]} />
@@ -103,11 +99,11 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.4,
-        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.35,
+        shadowRadius: 5,
       },
-      android: { elevation: 4 },
+      android: { elevation: 3 },
     }),
   },
   tint: {
@@ -115,7 +111,7 @@ const styles = StyleSheet.create({
   },
   border: {
     ...StyleSheet.absoluteFillObject,
-    borderWidth: 0.7,
-    borderColor: "rgba(255,255,255,0.13)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.12)",
   },
 });

@@ -111,5 +111,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(167,139,250,0.25)",
   },
-  badgeText: { fontSize: 11, fontFamily: "Inter_600SemiBold", color: "#A78BFA" },
+  badgeText: { fontSize: 11, fontFamily: "Inter_600SemiBold", color: "rgba(255,255,255,0.65)" },
 });

@@ -136,22 +136,20 @@ export const searchJamendoTracks = searchFreetouseTracks;
 
 // ── YouTube Music (ytmusicapi) ────────────────────────────────────────────
 
-const YT_MUSIC_SERVICES = [
-  "https://stephanie-investigate-pixel-starts.trycloudflare.com",
-  "https://tend-effectively-promote-abstract.trycloudflare.com",
-];
-
 async function ytFetch(path: string, init?: RequestInit): Promise<Response> {
-  let lastError: unknown;
-  for (const base of YT_MUSIC_SERVICES) {
+  const baseUrl = getBaseUrl();
+  if (baseUrl) {
     try {
-      const res = await fetch(`${base}${path}`, init);
+      const res = await fetch(`${baseUrl}/api/ytmusic${path}`, {
+        ...init,
+        signal: init?.signal ?? AbortSignal.timeout(35000),
+      });
       if (res.ok) return res;
     } catch (err) {
-      lastError = err;
+      // fall through
     }
   }
-  throw lastError ?? new Error("All YT Music services unavailable");
+  throw new Error("YT Music service unavailable");
 }
 
 export async function searchYTMusicTracks(query: string, limit = 30): Promise<Track[]> {
@@ -179,16 +177,17 @@ export async function fetchYTMusicTrending(): Promise<Track[]> {
 export async function fetchYTMusicStreamUrl(videoId: string): Promise<string | null> {
   try {
     const res = await ytFetch(`/stream/${videoId}`, { signal: AbortSignal.timeout(35000) });
-    const contentType = res.headers.get("content-type") ?? "";
-    if (contentType.includes("json")) {
-      const data = await res.json();
-      return (data?.url as string) ?? null;
-    }
-    // Service redirected to the audio stream directly — res.url is the final audio URL
-    return res.url || null;
+    const data = await res.json();
+    return (data?.url as string) ?? null;
   } catch {
     return null;
   }
+}
+
+export function getYTMusicDownloadUrl(videoId: string): string {
+  const baseUrl = getBaseUrl();
+  if (baseUrl) return `${baseUrl}/api/ytmusic/download/${videoId}`;
+  return `http://localhost:9000/download/${videoId}`;
 }
 
 export function isYTMusicTrack(track: Track): boolean {

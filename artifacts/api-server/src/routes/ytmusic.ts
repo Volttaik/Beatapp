@@ -1,4 +1,6 @@
 import { Router } from "express";
+import http from "http";
+import https from "https";
 
 const router = Router();
 
@@ -40,6 +42,39 @@ router.get("/ytmusic/stream/:videoId", async (req, res) => {
   } catch {
     res.status(502).json({ error: "Stream extraction failed" });
   }
+});
+
+router.get("/ytmusic/download/:videoId", (req, res) => {
+  const serviceUrl = new URL(`${YT_MUSIC_SERVICE}/download/${req.params.videoId}`);
+  const transport = serviceUrl.protocol === "https:" ? https : http;
+
+  const proxyReq = transport.request(
+    {
+      hostname: serviceUrl.hostname,
+      port: serviceUrl.port || (serviceUrl.protocol === "https:" ? 443 : 80),
+      path: serviceUrl.pathname + serviceUrl.search,
+      method: "GET",
+      timeout: 120000,
+    },
+    (proxyRes) => {
+      res.writeHead(proxyRes.statusCode ?? 200, {
+        "Content-Type": proxyRes.headers["content-type"] ?? "audio/m4a",
+        "Content-Length": proxyRes.headers["content-length"] ?? "",
+        "Content-Disposition": proxyRes.headers["content-disposition"] ?? "",
+        "Cache-Control": "no-cache",
+      });
+      proxyRes.pipe(res);
+    }
+  );
+
+  proxyReq.on("error", (err) => {
+    if (!res.headersSent) {
+      res.status(502).json({ error: `Download proxy error: ${err.message}` });
+    }
+  });
+
+  req.on("close", () => proxyReq.destroy());
+  proxyReq.end();
 });
 
 export default router;

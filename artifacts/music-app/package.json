@@ -60,8 +60,10 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
+    "crypto-js": "^4.2.0",
     "expo-av": "^16.0.8",
     "expo-build-properties": "~0.14.0",
-    "expo-file-system": "~19.0.23"
+    "expo-file-system": "~19.0.23",
+    "expo-notifications": "^0.32.17"
   }
 }
