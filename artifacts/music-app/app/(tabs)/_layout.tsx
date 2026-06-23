@@ -155,6 +155,10 @@ const tab = StyleSheet.create({
     paddingBottom: 4,
     gap: 4,
   },
+  iconWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   label: {
     fontSize: 10,
     fontFamily: "Inter_600SemiBold",
