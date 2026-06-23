@@ -1,8 +1,9 @@
-modules = ["nodejs-20", "web", "python-3.12"]
+modules = ["nodejs-20", "web", "python-3.11"]
 
 [deployment]
 router = "application"
 deploymentTarget = "autoscale"
+run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
@@ -63,7 +64,7 @@ task = "shell.exec"
 args = "PORT=9000 python3 artifacts/yt-music-service/app.py"
 
 [agent]
-stack = "BEST_EFFORT_FALLBACK"
+stack = "FLASK_VANILLA_JS"
 expertMode = true
 
 [postMerge]
@@ -96,3 +97,4 @@ externalPort = 3002
 
 [nix]
 channel = "stable-25_05"
+packages = ["openssl", "postgresql"]
