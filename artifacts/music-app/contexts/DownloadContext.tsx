@@ -8,7 +8,13 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { Track } from "@/data/tracks";
+import { Track, fetchYTMusicStreamUrl, isYTMusicTrack, getYTMusicVideoId } from "@/data/tracks";
+import {
+  showDownloadCompleteNotification,
+  showDownloadFailedNotification,
+  showDownloadStartedNotification,
+  setupNotifications,
+} from "@/services/NotificationService";
 
 export interface DownloadedTrack extends Track {
   localUri: string;
@@ -42,6 +48,16 @@ async function ensureDir() {
   }
 }
 
+async function resolveDownloadUrl(track: Track): Promise<string | null> {
+  if (isYTMusicTrack(track)) {
+    const videoId = getYTMusicVideoId(track);
+    if (!videoId) return null;
+    const streamUrl = await fetchYTMusicStreamUrl(videoId);
+    return streamUrl ?? null;
+  }
+  return track.audioUrl ?? null;
+}
+
 export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const [downloads, setDownloads] = useState<DownloadedTrack[]>([]);
   const [downloadProgress, setDownloadProgress] = useState<
@@ -49,6 +65,8 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   >({});
 
   useEffect(() => {
+    setupNotifications().catch(() => {});
+
     AsyncStorage.getItem(DOWNLOADS_KEY).then((data) => {
       if (data) {
         const parsed: DownloadedTrack[] = JSON.parse(data);
@@ -61,9 +79,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
           const valid = results.filter(Boolean) as DownloadedTrack[];
           setDownloads(valid);
           if (valid.length !== parsed.length) {
-            AsyncStorage.setItem(DOWNLOADS_KEY, JSON.stringify(valid)).catch(
-              () => {}
-            );
+            AsyncStorage.setItem(DOWNLOADS_KEY, JSON.stringify(valid)).catch(() => {});
           }
         });
       }
@@ -94,10 +110,23 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         [track.id]: { status: "downloading", progress: 0 },
       }));
 
+      showDownloadStartedNotification(track.title).catch(() => {});
+
       try {
         await ensureDir();
-        const ext = track.audioUrl.includes("mp3") ? "mp3" : "m4a";
+
+        const downloadUrl = await resolveDownloadUrl(track);
+        if (!downloadUrl) {
+          throw new Error("Could not resolve download URL");
+        }
+
+        const ext = downloadUrl.includes(".mp3") || downloadUrl.includes("mp3") ? "mp3" : "m4a";
         const localUri = `${DOWNLOAD_DIR}${track.id}.${ext}`;
+
+        const existingInfo = await FileSystem.getInfoAsync(localUri);
+        if (existingInfo.exists) {
+          await FileSystem.deleteAsync(localUri, { idempotent: true });
+        }
 
         const callback = (dp: FileSystem.DownloadProgressData) => {
           const ratio =
@@ -111,14 +140,24 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         };
 
         const downloadResumable = FileSystem.createDownloadResumable(
-          track.audioUrl,
+          downloadUrl,
           localUri,
-          {},
+          {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (compatible; BeatStream/1.0)",
+            },
+          },
           callback
         );
 
         const result = await downloadResumable.downloadAsync();
-        if (!result) throw new Error("Download failed");
+        if (!result || !result.uri) throw new Error("Download failed — no result URI");
+
+        const fileInfo = await FileSystem.getInfoAsync(result.uri);
+        if (!fileInfo.exists || (fileInfo as any).size === 0) {
+          throw new Error("Downloaded file is empty or missing");
+        }
 
         const downloadedTrack: DownloadedTrack = {
           ...track,
@@ -128,9 +167,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
 
         setDownloads((prev) => {
           const updated = [downloadedTrack, ...prev.filter((d) => d.id !== track.id)];
-          AsyncStorage.setItem(DOWNLOADS_KEY, JSON.stringify(updated)).catch(
-            () => {}
-          );
+          AsyncStorage.setItem(DOWNLOADS_KEY, JSON.stringify(updated)).catch(() => {});
           return updated;
         });
 
@@ -138,12 +175,16 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
           ...prev,
           [track.id]: { status: "done", progress: 1 },
         }));
+
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {
+        showDownloadCompleteNotification(track.title, track.artist).catch(() => {});
+      } catch (err) {
         setDownloadProgress((prev) => ({
           ...prev,
           [track.id]: { status: "error", progress: 0 },
         }));
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+        showDownloadFailedNotification(track.title).catch(() => {});
       }
     },
     [isDownloaded, downloadProgress]
@@ -157,14 +198,12 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       try {
         const info = await FileSystem.getInfoAsync(track.localUri);
-        if (info.exists) await FileSystem.deleteAsync(track.localUri);
+        if (info.exists) await FileSystem.deleteAsync(track.localUri, { idempotent: true });
       } catch {}
 
       setDownloads((prev) => {
         const updated = prev.filter((d) => d.id !== id);
-        AsyncStorage.setItem(DOWNLOADS_KEY, JSON.stringify(updated)).catch(
-          () => {}
-        );
+        AsyncStorage.setItem(DOWNLOADS_KEY, JSON.stringify(updated)).catch(() => {});
         return updated;
       });
 

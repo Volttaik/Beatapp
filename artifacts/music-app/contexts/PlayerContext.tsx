@@ -11,6 +11,11 @@ import React, {
 } from "react";
 import { Platform } from "react-native";
 import { Track, fetchYTMusicStreamUrl, isYTMusicTrack, getYTMusicVideoId } from "@/data/tracks";
+import {
+  updateNowPlayingNotification,
+  dismissNowPlayingNotification,
+  setupNotifications,
+} from "@/services/NotificationService";
 
 interface PlayerContextType {
   currentTrack: Track | null;
@@ -69,7 +74,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [queue, queueIndex, repeatMode]);
 
   useEffect(() => {
-    // Only call setAudioModeAsync on native — not supported on web
     if (Platform.OS !== "web") {
       Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
@@ -78,8 +82,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         shouldDuckAndroid: true,
       }).catch(() => {});
     }
+    setupNotifications().catch(() => {});
     loadRecentlyPlayed();
-    return () => { soundRef.current?.unloadAsync().catch(() => {}); };
+    return () => {
+      soundRef.current?.unloadAsync().catch(() => {});
+      dismissNowPlayingNotification().catch(() => {});
+    };
   }, []);
 
   const loadRecentlyPlayed = async () => {
@@ -135,7 +143,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       try {
         setIsLoading(true);
         setPlaybackError(null);
-        // Stop and unload whatever is currently playing immediately
         if (soundRef.current) {
           const prev = soundRef.current;
           soundRef.current = null;
@@ -176,6 +183,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setQueueIndex(idx);
         setIsPlaying(true);
         addToRecentlyPlayed(track);
+
+        // Update now playing notification
+        updateNowPlayingNotification(track.title, track.artist).catch(() => {});
       } catch (e: any) {
         if (currentLoadIdRef.current !== loadId) return;
         const msg = e?.message ?? "Could not load audio.";

@@ -1,7 +1,8 @@
 import { Tabs, Redirect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -10,6 +11,13 @@ import {
   Text,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  FadeIn,
+} from "react-native-reanimated";
 
 import MiniPlayer from "@/components/MiniPlayer";
 import { useLocalAuth } from "@/contexts/LocalAuthContext";
@@ -30,9 +38,6 @@ const TAB_CONFIG: {
   { name: "profile", icon: "user", label: "Profile" },
 ];
 
-const ACTIVE_COLOR = "#FFFFFF";
-const INACTIVE_COLOR = "#9B9B9B";
-
 function SpotifyTabButton({
   icon,
   label,
@@ -44,18 +49,39 @@ function SpotifyTabButton({
   focused: boolean;
   onPress: () => void;
 }) {
-  const color = focused ? ACTIVE_COLOR : INACTIVE_COLOR;
+  const scale = useSharedValue(1);
+  const dotOpacity = useSharedValue(focused ? 1 : 0);
+  const iconOpacity = useSharedValue(focused ? 1 : 0.5);
+
+  useEffect(() => {
+    dotOpacity.value = withTiming(focused ? 1 : 0, { duration: 200 });
+    iconOpacity.value = withTiming(focused ? 1 : 0.5, { duration: 200 });
+  }, [focused]);
+
+  const dotStyle = useAnimatedStyle(() => ({ opacity: dotOpacity.value }));
+  const iconStyle = useAnimatedStyle(() => ({ opacity: iconOpacity.value }));
+  const scaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  const activeColor = "#FFFFFF";
+  const inactiveColor = "rgba(255,255,255,0.5)";
+  const color = focused ? activeColor : inactiveColor;
+
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [tab.btn, pressed && { opacity: 0.6 }]}
+      onPressIn={() => { scale.value = withSpring(0.85, { damping: 10, stiffness: 400 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 12, stiffness: 300 }); }}
+      style={tab.btn}
     >
-      <View style={tab.iconWrap}>
-        <Feather name={icon} size={22} color={color} />
-      </View>
-      <Text style={[tab.label, { color }]} numberOfLines={1}>
+      <Animated.View style={[tab.iconWrap, scaleStyle]}>
+        <Animated.View style={iconStyle}>
+          <Feather name={icon} size={22} color={color} />
+        </Animated.View>
+        <Animated.View style={[tab.activeDot, dotStyle]} />
+      </Animated.View>
+      <Animated.Text style={[tab.label, { color }, iconStyle]} numberOfLines={1}>
         {label}
-      </Text>
+      </Animated.Text>
     </Pressable>
   );
 }
@@ -65,8 +91,20 @@ function SpotifyTabBar({ state, navigation }: any) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[bar.wrapper, { paddingBottom: insets.bottom }]}>
+    <Animated.View
+      entering={FadeIn.duration(300)}
+      style={[bar.wrapper, { paddingBottom: insets.bottom }]}
+    >
+      {Platform.OS === "ios" ? (
+        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: "#050505" }]} />
+      )}
+      <View style={[StyleSheet.absoluteFill, bar.overlay]} />
+      <View style={bar.topBorder} />
+
       {currentTrack ? <MiniPlayer /> : null}
+
       <View style={bar.tabRow}>
         {state.routes.map((route: any, index: number) => {
           const focused = state.index === index;
@@ -91,7 +129,7 @@ function SpotifyTabBar({ state, navigation }: any) {
           );
         })}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -116,8 +154,8 @@ function TabLayoutWithClerk() {
 
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#121212" }}>
-        <ActivityIndicator size="large" color="#1DB954" />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#000" }}>
+        <ActivityIndicator size="large" color="#C4B5FD" />
       </View>
     );
   }
@@ -131,8 +169,8 @@ function TabLayoutLocal() {
 
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#121212" }}>
-        <ActivityIndicator size="large" color="#1DB954" />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#000" }}>
+        <ActivityIndicator size="large" color="#C4B5FD" />
       </View>
     );
   }
@@ -153,11 +191,20 @@ const tab = StyleSheet.create({
     justifyContent: "center",
     paddingTop: 10,
     paddingBottom: 4,
-    gap: 4,
+    gap: 3,
   },
   iconWrap: {
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
+  },
+  activeDot: {
+    position: "absolute",
+    bottom: -5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#C4B5FD",
   },
   label: {
     fontSize: 10,
@@ -172,7 +219,14 @@ const bar = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "transparent",
+    overflow: "hidden",
+  },
+  overlay: {
+    backgroundColor: Platform.OS === "ios" ? "rgba(0,0,0,0.3)" : "transparent",
+  },
+  topBorder: {
+    height: 0.7,
+    backgroundColor: "rgba(255,255,255,0.08)",
   },
   tabRow: {
     flexDirection: "row",

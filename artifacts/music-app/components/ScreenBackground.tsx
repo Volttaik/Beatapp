@@ -1,7 +1,5 @@
 import React from "react";
-import { ImageBackground, StyleSheet, View } from "react-native";
-
-const planetBg = require("../assets/images/planet-bg.jpg");
+import { StyleSheet, View } from "react-native";
 
 interface ScreenBackgroundProps {
   children: React.ReactNode;
@@ -9,19 +7,15 @@ interface ScreenBackgroundProps {
 
 export default function ScreenBackground({ children }: ScreenBackgroundProps) {
   return (
-    <ImageBackground source={planetBg} style={styles.container} resizeMode="cover">
-      <View style={styles.overlay}>{children}</View>
-    </ImageBackground>
+    <View style={styles.container}>
+      {children}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "#000000",
   },
 });

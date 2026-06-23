@@ -1,2 +1,3 @@
 - [Beatstream app architecture](beatstream-arch.md) — Expo 54 music app with Clerk auth, FreeTouse API, 5-tab nav, playlist/queue/stats system
 - [Beatstream workflows](beatstream-workflows.md) — Workflow names and port assignments for dev environment
+- [Beatstream visual overhaul](beatstream-visual-overhaul.md) — Wave bg, animations, download fix, notifications, black theme decisions
