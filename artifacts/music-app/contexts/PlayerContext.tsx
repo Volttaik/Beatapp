@@ -55,6 +55,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const queueRef = useRef<Track[]>([]);
   const repeatModeRef = useRef<"none" | "all" | "one">("none");
   const localUriResolverRef = useRef<((id: string) => string | null) | null>(null);
+  const currentLoadIdRef = useRef(0);
 
   const setLocalUriResolver = useCallback(
     (fn: ((id: string) => string | null) | null) => { localUriResolverRef.current = fn; },
@@ -125,6 +126,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const loadAndPlay = useCallback(
     async (track: Track, q: Track[] = [], idx = 0, overrideUri?: string) => {
+      const loadId = ++currentLoadIdRef.current;
+
       if (!track?.audioUrl) {
         setPlaybackError("This track has no audio URL.");
         return;
@@ -132,16 +135,22 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       try {
         setIsLoading(true);
         setPlaybackError(null);
+        // Stop and unload whatever is currently playing immediately
         if (soundRef.current) {
-          await soundRef.current.unloadAsync().catch(() => {});
+          const prev = soundRef.current;
           soundRef.current = null;
+          await prev.stopAsync().catch(() => {});
+          await prev.unloadAsync().catch(() => {});
         }
+        if (currentLoadIdRef.current !== loadId) return;
+
         const localUri = overrideUri ?? localUriResolverRef.current?.(track.id) ?? null;
         let resolvedUrl = localUri ?? track.audioUrl;
         if (!localUri && isYTMusicTrack(track)) {
           const videoId = getYTMusicVideoId(track);
           if (videoId) {
             const streamUrl = await fetchYTMusicStreamUrl(videoId);
+            if (currentLoadIdRef.current !== loadId) return;
             if (!streamUrl) {
               setPlaybackError("Could not fetch stream. Try another track.");
               setIsLoading(false);
@@ -150,12 +159,17 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             resolvedUrl = streamUrl;
           }
         }
-        const uri = resolvedUrl;
+        if (currentLoadIdRef.current !== loadId) return;
+
         const { sound } = await Audio.Sound.createAsync(
-          { uri },
+          { uri: resolvedUrl },
           { shouldPlay: true, progressUpdateIntervalMillis: 500 },
           onPlaybackStatusUpdate
         );
+        if (currentLoadIdRef.current !== loadId) {
+          sound.unloadAsync().catch(() => {});
+          return;
+        }
         soundRef.current = sound;
         setCurrentTrack(track);
         setQueue(q);
@@ -163,6 +177,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setIsPlaying(true);
         addToRecentlyPlayed(track);
       } catch (e: any) {
+        if (currentLoadIdRef.current !== loadId) return;
         const msg = e?.message ?? "Could not load audio.";
         setPlaybackError(
           msg.includes("network") || msg.includes("Network")
@@ -173,7 +188,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         );
         setIsPlaying(false);
       } finally {
-        setIsLoading(false);
+        if (currentLoadIdRef.current === loadId) setIsLoading(false);
       }
     },
     [onPlaybackStatusUpdate, addToRecentlyPlayed]

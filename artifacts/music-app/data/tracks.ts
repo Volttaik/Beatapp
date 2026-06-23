@@ -179,8 +179,13 @@ export async function fetchYTMusicTrending(): Promise<Track[]> {
 export async function fetchYTMusicStreamUrl(videoId: string): Promise<string | null> {
   try {
     const res = await ytFetch(`/stream/${videoId}`, { signal: AbortSignal.timeout(35000) });
-    const data = await res.json();
-    return (data?.url as string) ?? null;
+    const contentType = res.headers.get("content-type") ?? "";
+    if (contentType.includes("json")) {
+      const data = await res.json();
+      return (data?.url as string) ?? null;
+    }
+    // Service redirected to the audio stream directly — res.url is the final audio URL
+    return res.url || null;
   } catch {
     return null;
   }
