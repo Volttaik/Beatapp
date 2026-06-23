@@ -136,7 +136,7 @@ export const searchJamendoTracks = searchFreetouseTracks;
 
 // ── YouTube Music (ytmusicapi) ────────────────────────────────────────────
 
-const YT_MUSIC_SERVICE = "https://beatstream-gateway--lawsanu0.replit.app";
+const YT_MUSIC_SERVICE = "https://stephanie-investigate-pixel-starts.trycloudflare.com";
 
 export async function searchYTMusicTracks(query: string, limit = 30): Promise<Track[]> {
   const url = `${YT_MUSIC_SERVICE}/search?q=${encodeURIComponent(query)}&limit=${limit}`;
